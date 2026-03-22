@@ -27,3 +27,6 @@
 
 ## Optional cleanup targets
 _minted-*/
+
+## Python
+.venv/
