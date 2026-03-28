@@ -30,7 +30,7 @@ The Short-Time Fourier Transform (STFT) addresses this limitation by applying th
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/stft_pipeline.pdf}
+    \includegraphics[width=\textwidth]{figures/chapters/2/stft_pipeline.pdf}
     \caption{Audio-to-spectrogram pipeline: raw waveform (time domain), overlapping windowing, FFT on each window, and final time-frequency spectrogram representation.}
 % \label{fig:stft_pipeline}
 \end{figure}
@@ -45,7 +45,11 @@ Human pitch perception is approximately logarithmic: the perceived difference be
 
 A mel spectrogram is obtained by projecting the frequency axis of a standard STFT spectrogram onto a set of mel-spaced triangular filter banks. The mel filter bank for projecting frequencies is inspired by the human auditory system and physiological findings on speech perception.\cite{hendrikpurwins20191}  These filters are narrowly spaced at low frequencies (where human frequency discrimination is fine) and more widely spaced at high frequencies (where discrimination is coarser). The magnitudes within each filter band are summed, resulting in a reduced number of frequency bins that better reflect perceptual relevance. Applying a logarithmic transformation to these magnitudes yields the log-mel spectrogram, which further aligns the representation with human loudness perception.
 
-[FIGURE: Linear spectrogram vs. mel spectrogram comparison. Two side-by-side spectrograms of the same audio excerpt: (left) linear frequency axis, (right) mel-scaled frequency axis. Annotate the mel version to show how low frequencies get more resolution than high frequencies. Format: generate in Python with librosa and export as images.]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/linear_vs_mel_spectrogram.pdf}
+    \caption{Comparison of two time-frequency representations of the same audio excerpt: linear-frequency STFT spectrogram (left) and mel-scaled spectrogram (right). The mel representation allocates finer resolution at low frequencies and coarser resolution at high frequencies, better reflecting human pitch perception.}
+\end{figure}
 
 The log-mel spectrogram has become the dominant input representation for deep learning models applied to audio.\cite{hendrikpurwins20191}  It provides a compact, perceptually motivated summary of the audio signal that retains the information most relevant to human hearing while discarding redundancy in the high-frequency range. Compared to raw waveforms, log-mel spectrograms require significantly less data and training time to achieve comparable classification performance, making them the practical default for most MIR tasks.\cite{hendrikpurwins20191}  
 
@@ -59,9 +63,13 @@ While spectrograms provide a rich, general-purpose representation of audio, many
 
 \textbf{Temporal features} describe properties of the signal in the time domain. The zero-crossing rate (ZCR) measures how frequently the signal changes sign, which correlates with the noisiness or percussive character of the sound.  Root mean square (RMS) energy provides a frame-level measure of loudness. Onset strength functions measure the likelihood of a musical onset (the beginning of a note or percussive hit) at each time step, typically derived from the rate of increase in spectral energy.
 
-\textbf{Tonal and chroma features} capture pitch-class information independently of octave. A chroma feature vector represents the energy distribution across the twelve pitch classes of the Western chromatic scale (C, C\#, D, ..., B), collapsing octave information so that all instances of a given note class contribute to the same bin. Chroma features can be derived from the STFT (Chroma STFT), the Constant-Q Transform (Chroma CQT, which offers better frequency resolution at low frequencies), or computed with energy normalization and temporal smoothing (Chroma CENS) for more robust harmonic pattern recognition.  These features are particularly relevant for tasks involving harmonic analysis, chord recognition, and key estimation.
+\textbf{Tonal and chroma features} capture pitch-class information independently of octave. A chroma feature vector represents the energy distribution across the twelve pitch classes of the Western chromatic scale (C, C\#, D, \ldots, B), collapsing octave information so that all instances of a given note class contribute to the same bin. Chroma features can be derived from the STFT (Chroma STFT), the Constant-Q Transform (Chroma CQT, which offers better frequency resolution at low frequencies), or computed with energy normalization and temporal smoothing (Chroma CENS) for more robust harmonic pattern recognition.  These features are particularly relevant for tasks involving harmonic analysis, chord recognition, and key estimation.
 
-[FIGURE: Summary of audio features. A diagram or table showing the main feature categories (spectral, cepstral, temporal, tonal) with representative features listed under each, and a brief note on what musical quality each captures (e.g., spectral centroid → brightness, chroma → harmonic content). Format: could be a simple TikZ table or a structured diagram.]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/audio_feature_summary.pdf}
+    \caption{Summary of major audio feature categories used in MIR, with representative descriptors and the corresponding musical qualities they capture.}
+\end{figure}
 
 The choice of which features to extract depends on the task at hand. Beat tracking systems typically operate on onset strength functions or spectral flux, while systems concerned with mood or energy may rely more heavily on spectral centroid, loudness curves, and MFCCs. For the system described in this thesis, which must translate audio into lighting parameters that reflect both rhythmic and timbral qualities of the music, a combination of spectral, temporal, and rhythmic features is relevant. The specific feature extraction pipeline is discussed in Chapter 6.
 
@@ -77,7 +85,11 @@ Not all beats carry equal perceptual weight. Western music groups beats into rec
 
 This hierarchical view matters for computational systems because different applications need different levels of the grid. A simple visualiser that flashes on every beat needs only the beat level. A lighting controller that distinguishes verse from chorus needs the downbeat level (to know where measures begin) and, ideally, a sense of higher-level phrasing (to know where sections change). Beat tracking and downbeat tracking are therefore treated as distinct but related tasks in MIR. 
 
-[FIGURE: Metrical hierarchy diagram. Show a four-bar excerpt in 4/4 time as a tree or layered grid: the top row marks the four-bar phrase boundary, the next row marks downbeats (bar lines), the next row marks individual beats, and the bottom row marks sub-beat divisions (eighth notes). Label each level. This can be drawn as a simple TikZ grid or adapted from standard music theory textbooks.]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/metrical_hierarchy_diagram.pdf}
+    \caption{Metrical hierarchy in a four-bar 4/4 excerpt. The diagram shows nested rhythmic levels: phrase boundary (top), downbeats at bar lines, quarter-note beats, and eighth-note sub-beat divisions.}
+\end{figure}
 
 \subsection{EDM Form and Structure}
 
@@ -85,7 +97,11 @@ Electronic dance music occupies a distinctive position in the landscape of popul
 
 At the macro level, EDM tracks follow a broadly predictable formal scheme. Butler (2006) and Snoman (2009) identify a conventional template in which a track contains two cycles of build-up and drop, with the second cycle typically more intense than the first.\cite{ragnhildtorvangersolberg20142}  Solberg (2014) refines this into a framework centred on three key sections: the breakdown, the build-up, and the drop. These names reflect their musical function. The breakdown strips the track's texture down, removing layers and, crucially, removing the bass and bass drum, the rhythmic foundation on which dancers rely and coordinate themselves. The build-up that follows gives strong indications of a massive musical, emotional, and bodily peak ahead. The drop then reintroduces the bass and bass drum, resolving the accumulated tension in what is often the most intense moment of the track.\cite{ragnhildtorvangersolberg20142}  A complete track typically frames these cycles within an intro and outro that facilitate DJ mixing.
 
-[FIGURE: EDM macro-structure and intensity curve. A horizontal timeline of a typical EDM track divided into labelled sections: Intro, Build-up 1, Drop 1, Breakdown, Build-up 2, Drop 2, Outro. Overlay a smooth intensity or energy curve that dips during breakdowns and peaks at drops. Adapted from the structural scheme described by Butler (2006) and Solberg (2014). This works well as a simple TikZ diagram with a shaded area plot.]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/edm_macro_structure_intensity.pdf}
+    \caption{Typical EDM macro-structure shown as a timeline of sections (Intro, Build-up 1, Drop 1, Breakdown, Build-up 2, Drop 2, Outro), with an overlaid intensity curve that dips during the breakdown and peaks at the drops. Adapted from structural descriptions by Butler (2006) and Solberg (2014).}
+\end{figure}
 
 What makes this formal structure audible to listeners (and potentially detectable by computational systems) is a set of production techniques that function as structural markers. Solberg identifies five dominant techniques used in build-ups and drops: (i) extensive use of uplifters, rising noise sweeps or pitched sounds that create a sensation of upward motion; (ii) the "drum roll effect," a rhythmic acceleration of percussive hits as the drop approaches; (iii) large frequency changes, often achieved through filter sweeps; (iv) the removal and reintroduction of the bass and bass drum; and (v) a contrasting breakdown that heightens the impact of the subsequent drop.\cite{ragnhildtorvangersolberg20142}   
 
@@ -101,7 +117,11 @@ Historically, beat tracking grew out of onset detection, the task of identifying
 
 Most recent systems follow a common pipeline consisting of three stages. First, the audio is transformed into a time-frequency representation, typically a mel spectrogram. Second, a neural network (often a convolutional recurrent neural network, or CRNN) processes the spectrogram to produce frame-wise beat and downbeat activation values: a probability for each time frame indicating how likely it is to contain a beat or downbeat. Third, a post-processing stage converts these noisy, continuous activations into discrete beat positions.\cite{francescofoscarinnd4}   
 
-[FIGURE: Beat tracking pipeline. A horizontal block diagram showing four stages from left to right: Audio Waveform → Spectrogram (mel spectrogram) → Neural Network (producing beat/downbeat activations as a probability curve) → Post-Processing (producing final beat positions as vertical markers on a timeline). Label each block and show a small illustrative visual inside each: a waveform, a spectrogram image, an activation curve, and evenly-spaced beat markers.]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/beat_tracking_pipeline.pdf}
+    \caption{Beat tracking pipeline: audio waveform to mel spectrogram, neural network beat/downbeat activations, and post-processing that converts activations into discrete beat positions on a timeline.}
+\end{figure}
 
 The most widely used post-processing method is the Dynamic Bayesian Network (DBN) in the form proposed by Böck et al. (2011). The DBN imposes a probabilistic model over tempo and meter, forcing the predicted beats to conform to musically plausible constraints: a tempo range (typically 55 to 215 BPM), a set of allowed time signatures (typically 3/4 and 4/4), and a degree of tempo continuity.\cite{francescofoscarinnd4}   This works well for the majority of popular music, where tempo and meter are stable, but it can fail on pieces that deviate from these assumptions, such as music with tempo changes, unusual time signatures, or rubato performance. An alternative post-processing paradigm is particle filtering, used by systems like BeatNet and its successor BeatNet+. In particle filtering, a set of particles represents and evolves the posterior distribution of rhythmic states (beat, downbeat, non-beat) over time, allowing the system to track tempo changes more flexibly than the DBN.  BeatNet+ combines a CRNN front-end with a two-level cascade Monte Carlo particle filter to perform real-time joint beat, downbeat, and meter tracking.\cite{mojtabaheydari20245}   
 
@@ -133,7 +153,11 @@ The complementary strengths of CNNs and RNNs lead naturally to their combination
 
 The CRNN has become the dominant architecture for frame-level music analysis tasks, including beat tracking, onset detection, chord recognition, and vocal melody extraction.\cite{hendrikpurwins20191}   A representative example discussed in Section 2.2 is BeatNet+, whose architecture consists of three convolutional layers followed by four LSTM layers, producing frame-wise beat and downbeat activation functions from a log-frequency spectrogram input.\cite{mojtabaheydari20245}   CRNNs have also been the standard architecture for online (causal) beat tracking systems, where the recurrent component naturally processes audio one frame at a time in a streaming fashion.\cite{chihchengchang20236}   The practical success of the CRNN across so many MIR tasks can be attributed to this clean separation of concerns: convolution handles the local, spatial structure of the spectrogram, while recurrence handles the global, temporal structure of the music.
 
-[FIGURE: Deep learning building blocks for audio analysis. A diagram showing four architecture families as increasingly complex assemblies: (1) a CNN block consisting of convolutional layers with pooling operating on a spectrogram, (2) an RNN/LSTM block showing recurrent connections across a sequence of time steps, (3) a CRNN that combines both by feeding CNN output into an RNN, and (4) a Transformer block built from multi-head self-attention and position-wise feed-forward layers. Arrows indicate how each architecture builds on or extends the previous one. Adapted from Purwins et al. (2019), Figure 2.]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/deep_learning_building_blocks.pdf}
+    \caption{Deep learning building blocks for audio analysis, shown as increasingly complex architecture families: CNN, RNN/LSTM, CRNN (CNN + RNN), and Transformer (self-attention with feed-forward blocks). Arrows indicate progression and extension across model families. Adapted from Purwins et al. (2019).}
+\end{figure}
 
 \subsection{Attention and the Transformer Architecture}
 
@@ -167,7 +191,11 @@ What distinguishes BART from encoder-only models such as BERT or decoder-only mo
 
 The BART architecture has been successfully adapted beyond natural language. PianoBART (Liang et al., 2024) applies the same framework to symbolic music, pre-training on large-scale piano MIDI data to learn latent musical representations and then fine-tuning on downstream tasks such as melody extraction and emotion classification.\cite{zijianzhao202510}  As discussed below, the Skip-BART model developed by Zhao et al. (2025) extends this cross-domain adaptation further, from symbolic music to a cross-modal setting in which the encoder processes audio representations and the decoder generates lighting control sequences.\cite{zijianzhao202510} 
 
-[FIGURE: The BART encoder-decoder architecture. On the left, the bidirectional encoder processes a corrupted input sequence (with some tokens masked or deleted). On the right, the autoregressive decoder reconstructs the original sequence, attending to the encoder's output through cross-attention at each layer. Show the flow of information: input tokens → encoder layers (bidirectional self-attention) → cross-attention → decoder layers (causal self-attention) → output tokens. Adapted from Lewis (2019) and the Skip-BART paper's Figure 1.]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/bart_encoder_decoder_architecture.pdf}
+    \caption{BART encoder-decoder architecture. The bidirectional encoder processes a corrupted input sequence, and the autoregressive decoder reconstructs the original sequence via masked self-attention and layer-wise cross-attention to encoder representations. Adapted from Lewis (2019) and the Skip-BART architecture description.}
+\end{figure}
 
 \subsection{Cross-Modal Adaptation}
 
@@ -184,8 +212,6 @@ The backbone of Skip-BART directly incorporates pre-trained parameters from Pian
 \subsection{Parameter-Efficient Fine-Tuning and Inference}
 
 The combination of transfer learning, DARE merging, and LoRA results in a model with approximately 240 million total parameters but only 19 million trainable parameters.\cite{zijianzhao202510}  This parameter efficiency is critical given the limited size of stage lighting datasets.
-
-[FIGURE: Skip-BART workflow diagram showing the three phases: (1) Pre-training, where the encoder processes masked music sequences and the decoder reconstructs them using a BART-based masked language modelling objective with a discriminator; (2) Fine-tuning, where the encoder receives music embeddings from OpenL3 and the decoder is trained to predict discrete hue and value tokens using a classification head; (3) Inference, where the decoder generates lighting tokens autoregressively using RSTC sampling. Adapted from Zhao et al. (2025), Figure 3.]
 
 The model is pre-trained using a BART-based masked language modelling approach. During pre-training, only the music data is used (without light) to avoid information leakage. The encoder encodes the masked music sequence, while the decoder receives the shift-right ground truth as input and attempts to recover the original music sequence. Although there is a gap between the music modality in pre-training and the light modality in fine-tuning, this approach has been demonstrated to be effective, supported by the theory of cross-modal transfer learning.\cite{zijianzhao202510}  During fine-tuning, the model is trained end-to-end to generate the corresponding lighting sequences using a next-token prediction objective framed as a classification task over the hue and value vocabularies.\cite{zijianzhao202510} 
 
@@ -215,7 +241,11 @@ To explain these associations, Palmer et al. propose the emotional mediation hyp
 
 These music-colour associations are distinct from synesthesia. While a small minority of individuals report involuntary cross-modal experiences of colour while hearing musical sounds, scientific studies initially failed to establish general correspondences because synesthetic sound-to-colour mappings appeared idiosyncratic.\cite{stephenepalmer201313}  The associations reported by Palmer et al. are, by contrast, widely shared across non-synesthetic populations. Separately, non-synesthetic people also exhibit relatively low-level auditory-visual associations: higher pitches tend to be associated with lighter colours, and there is evidence for other correspondences such as timbre-saturation, loudness-brightness, and pitch-size associations. Spence (2011) argues that three types of cross-modal matching mechanisms have been established empirically: structural correspondences based on common neural coding, statistical correspondences based on natural covariation of cross-modal attributes, and semantically mediated correspondences based on common descriptive terminology.\cite{stephenepalmer201313}  Palmer et al.'s results provide clear evidence for a fourth type: cross-modal correspondences based on common emotional associations.\cite{stephenepalmer201313} 
 
-[FIGURE: Music-colour association diagram. Show Palmer et al.'s (2013) core finding: a two-panel layout with (left) the emotional space showing how musical selections and colour choices cluster along happy/sad and strong/weak dimensions, and (right) example associations (fast major music → saturated warm colours; slow minor music → desaturated cool colours). Include the key correlation values. Adapted from Palmer et al. (2013).]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/music_colour_association_diagram.pdf}
+    \caption{Music-colour associations mediated by emotion, adapted from Palmer et al. (2013): (A) a shared emotional space (MDS) showing alignment between colour and music selections along valence (sad-happy) and potency (weak-strong), with reported emotion-colour correlations; and (B) schematic mappings from fast/major music to saturated warm colours and slow/minor music to desaturated cool colours.}
+\end{figure}
 
 For the system developed in this thesis, the emotional mediation framework provides a principled theoretical basis for why music-driven lighting should produce perceptually meaningful results. If listeners consistently associate certain musical qualities with certain colours via shared emotional connotations, then a model trained on real lighting data created by professional lighting engineers should, in principle, learn to reproduce these associations, even without an explicit emotion classification stage.
 
@@ -247,7 +277,11 @@ The standard metric for assessing whether an algorithm can operate in real time 
 
 RTF alone does not fully characterise suitability for live use. The Lyria Team at Google DeepMind distinguish live music models from merely fast offline ones by requiring three attributes simultaneously: real-time throughput (RTF $\geq$ 1x), causal streaming in which audio is generated continuously as a function of both user control inputs and past audio output, and responsive controls where the delay between input and output is low enough to facilitate live interaction.\cite{lyriateamnd15}  This tripartite definition is instructive because it highlights that speed (RTF) is a necessary but not sufficient condition for real-time interaction; the processing must also be causal and the end-to-end delay must be perceptually acceptable.
 
-[FIGURE: A diagram illustrating the difference between offline batch processing (entire signal processed at once) and real-time streaming (sequential block processing with causal constraints). Show the input audio being divided into blocks, each processed independently with state carried forward.]
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/2/offline_vs_realtime_streaming.pdf}
+    \caption{Comparison of offline batch processing and real-time streaming audio processing. Offline processing consumes the full signal at once with unrestricted access to future samples. In streaming mode, audio arrives in sequential blocks of size $M$ at sample rate $F_s$, giving frame period $T = M/F_s$ (e.g., $M=512$, $F_s=44100 \Rightarrow T \approx 11.6$ ms), and outputs are constrained to depend only on past and present input.}
+\end{figure}
 
 \subsection{Sources of Latency}
 

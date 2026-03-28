@@ -89,6 +89,5 @@ cb = fig.colorbar(im, ax=ax4, pad=0.03, aspect=20)
 cb.set_label("dB", fontsize=8)
 
 fig.savefig("stft_pipeline.pdf", dpi=300)
-# fig.savefig("stft_pipeline.png", dpi=300)
 plt.close()
-print("Saved  stft_pipeline.pdf  and  stft_pipeline.png")
+print("Saved  stft_pipeline.pdf")
