@@ -1,22 +1,20 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-plt.rcParams.update(
-    {
-        "font.family": "DejaVu Sans",
-        "font.size": 10,
-        "axes.linewidth": 0.7,
-        "xtick.major.width": 0.6,
-        "ytick.major.width": 0.6,
-    }
-)
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.style import apply_style
 
 
 def main() -> None:
+    apply_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={"wspace": 0.20})
     fig.patch.set_facecolor("white")
 
@@ -169,11 +167,8 @@ def main() -> None:
         color="#6b7280",
     )
 
-    out_dir = Path(__file__).resolve().parent.parent / "chapters" / "2"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_pdf = out_dir / "music_colour_association_diagram.pdf"
-    fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=2)
+    save_pdf(fig, out_pdf)
     print(f"Saved {out_pdf}")
 
 

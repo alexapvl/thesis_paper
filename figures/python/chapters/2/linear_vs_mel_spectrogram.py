@@ -1,21 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+import sys
 
 import librosa
 import librosa.display
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-# Global style aligned with existing Python-generated figures
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.size": 10,
-        "axes.linewidth": 0.6,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-    }
-)
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.style import apply_style
 
 
 def make_demo_signal(sr: int = 22050, duration: float = 3.5) -> np.ndarray:
@@ -42,6 +38,7 @@ def make_demo_signal(sr: int = 22050, duration: float = 3.5) -> np.ndarray:
 
 
 def main() -> None:
+    apply_style()
     sr = 22050
     n_fft = 2048
     hop_length = 256
@@ -115,10 +112,8 @@ def main() -> None:
     cbar = fig.colorbar(img_mel, ax=axes, shrink=0.92, pad=0.02)
     cbar.set_label("Magnitude (dB)")
 
-    out_dir = Path(__file__).resolve().parent.parent
-    out_pdf = out_dir / "linear_vs_mel_spectrogram.pdf"
-    fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=2)
+    save_pdf(fig, out_pdf)
 
     print(f"Saved {out_pdf}")
 

@@ -1,41 +1,34 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.size": 10,
-        "axes.linewidth": 0.6,
-    }
-)
+from figures.python.components import directed_edge, rounded_box
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.palette import color
+from figures.python.style import apply_style, apply_suptitle
 
 
 def node(ax, xy, w, h, text, fc, ec="#334155", fs=8.6, bold=False):
-    x, y = xy
-    patch = FancyBboxPatch(
-        (x - w / 2, y - h / 2),
-        w,
-        h,
-        boxstyle="round,pad=0.008,rounding_size=0.02",
-        linewidth=1.0,
-        edgecolor=ec,
-        facecolor=fc,
-        zorder=3,
-    )
-    ax.add_patch(patch)
-    ax.text(
-        x,
-        y,
+    rounded_box(
+        ax,
+        xy,
+        (w, h),
         text,
-        ha="center",
-        va="center",
-        fontsize=fs,
-        fontweight="bold" if bold else "normal",
-        color="#0f172a",
-        zorder=4,
+        box_overrides={
+            "boxstyle": "round,pad=0.008,rounding_size=0.02",
+            "facecolor": fc,
+            "edgecolor": ec,
+        },
+        text_overrides={
+            "fontsize": fs,
+            "fontweight": "bold" if bold else "normal",
+            "color": color("text_primary"),
+        },
     )
 
 
@@ -51,26 +44,23 @@ def link(
     curve=0.0,
     label_dx=0.0,
 ):
-    arr = FancyArrowPatch(
+    directed_edge(
+        ax,
         p0,
         p1,
-        arrowstyle="-|>",
-        mutation_scale=12,
-        linewidth=1.0,
-        color=color,
-        shrinkA=shrink_a,
-        shrinkB=shrink_b,
-        connectionstyle=f"arc3,rad={curve}",
-        zorder=2,
+        label=label,
+        label_offset=(label_dx, offset),
+        arrow_overrides={
+            "color": color,
+            "shrinkA": shrink_a,
+            "shrinkB": shrink_b,
+            "connectionstyle": f"arc3,rad={curve}",
+        },
     )
-    ax.add_patch(arr)
-    if label:
-        mx = 0.5 * (p0[0] + p1[0])
-        my = 0.5 * (p0[1] + p1[1]) + offset
-        ax.text(mx + label_dx, my, label, ha="center", va="center", fontsize=7.8, color=color)
 
 
 def main() -> None:
+    apply_style()
     fig, ax = plt.subplots(figsize=(15.6, 7.6))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
@@ -147,17 +137,14 @@ def main() -> None:
     )
 
     ax.text(0.03, 0.84, "Input Path A", fontsize=8.5, color="#1d4ed8", fontweight="bold")
-    ax.text(0.03, 0.59, "Input Path B", fontsize=8.5, color="#1d4ed8", fontweight="bold")
-    ax.text(0.36, 0.74, "Shared processing chain", fontsize=8.6, color="#334155", fontweight="bold")
-    ax.text(0.54, 0.105, "Analysis + transport outputs", fontsize=8.6, color="#15803d", fontweight="bold")
+    ax.text(0.03, 0.59, "Input Path B", fontsize=8.5, color=color("text_muted"), fontweight="bold")
+    ax.text(0.36, 0.74, "Shared processing chain", fontsize=8.6, color=color("text_muted"), fontweight="bold")
+    ax.text(0.54, 0.105, "Analysis + transport outputs", fontsize=8.6, color=color("ws_edge"), fontweight="bold")
 
-    fig.suptitle("Web Audio API Routing Graph for the Application", fontsize=14, fontweight="bold", y=0.98)
+    apply_suptitle(fig, "Web Audio API Routing Graph for the Application")
 
-    out_dir = Path(__file__).resolve().parents[3] / "chapters" / "3"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_pdf = out_dir / "web_audio_api_routing_graph.pdf"
-    fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=3)
+    save_pdf(fig, out_pdf)
     print(f"Saved {out_pdf}")
 
 

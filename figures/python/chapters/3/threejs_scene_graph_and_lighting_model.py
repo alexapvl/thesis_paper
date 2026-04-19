@@ -1,62 +1,51 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.size": 10,
-        "axes.linewidth": 0.6,
-    }
-)
+from figures.python.components import directed_edge, rounded_box
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.palette import color
+from figures.python.style import apply_style, apply_suptitle
 
 
 def draw_box(ax, center, size, text, fc="#f8fafc", ec="#334155", fontsize=9.2, bold=False):
-    cx, cy = center
-    w, h = size
-    box = FancyBboxPatch(
-        (cx - w / 2, cy - h / 2),
-        w,
-        h,
-        boxstyle="round,pad=0.02,rounding_size=0.03",
-        linewidth=1.0,
-        facecolor=fc, 
-        edgecolor=ec,
-        zorder=3,
-    )
-    ax.add_patch(box)
-    ax.text(
-        cx,
-        cy,
+    rounded_box(
+        ax,
+        center,
+        size,
         text,
-        ha="center",
-        va="center",
-        fontsize=fontsize,
-        fontweight="bold" if bold else "normal",
-        color="#0f172a",
-        zorder=4,
+        box_overrides={
+            "boxstyle": "round,pad=0.02,rounding_size=0.03",
+            "facecolor": fc,
+            "edgecolor": ec,
+        },
+        text_overrides={
+            "fontsize": fontsize,
+            "fontweight": "bold" if bold else "normal",
+            "color": color("text_primary"),
+        },
     )
 
 
 def arrow(ax, p0, p1, text=None, y_offset=0.0, shrink_b=10, curve=0.0):
-    arr = FancyArrowPatch(
+    directed_edge(
+        ax,
         p0,
         p1,
-        arrowstyle="-|>",
-        mutation_scale=12,
-        linewidth=1.0,
-        color="#475569",
-        shrinkB=shrink_b,
-        connectionstyle=f"arc3,rad={curve}",
-        zorder=2,
+        label=text,
+        label_offset=(0.0, y_offset),
+        arrow_overrides={
+            "color": color("stroke_default"),
+            "shrinkB": shrink_b,
+            "connectionstyle": f"arc3,rad={curve}",
+        },
+        label_overrides={"fontsize": 8.2, "color": color("text_muted")},
     )
-    ax.add_patch(arr)
-    if text:
-        mx = 0.5 * (p0[0] + p1[0])
-        my = 0.5 * (p0[1] + p1[1]) + y_offset
-        ax.text(mx, my, text, ha="center", va="center", fontsize=8.2, color="#334155")
 
 
 def spotlight_annotation(ax, anchor_xy, lines, x_shift, y_shift=0.06):
@@ -77,6 +66,7 @@ def spotlight_annotation(ax, anchor_xy, lines, x_shift, y_shift=0.06):
 
 
 def main() -> None:
+    apply_style()
     fig, ax = plt.subplots(figsize=(13.8, 8.0))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
@@ -96,8 +86,8 @@ def main() -> None:
     truss = (0.80, 0.5)
     fixtures = (0.94, 0.5)
 
-    renderer = (0.5, 0.16)
-    frame = (0.83, 0.16)
+    renderer = (0.5, 0.3)
+    frame = (0.83, 0.3)
 
     draw_box(ax, scene, (0.14, 0.08), "Scene", fc="#dbeafe", ec="#1d4ed8", bold=True, fontsize=10.5)
     draw_box(ax, camera, (0.17, 0.085), "PerspectiveCamera", fc="#f1f5f9")
@@ -137,8 +127,7 @@ def main() -> None:
     arrow(
         ax,
         (camera[0] - 0.04, camera[1] - 0.05),
-        (renderer[0] - 0.11, renderer[1] + 0.052),
-        curve=0.12,
+        (renderer[0] - 0.05, renderer[1] + 0.052),
     )
     arrow(ax, (renderer[0] + 0.11, renderer[1]), (frame[0] - 0.09, frame[1]), text="render()", y_offset=0.03)
 
@@ -155,13 +144,10 @@ def main() -> None:
         y_shift=-0.15,
     )
 
-    fig.suptitle("Three.js Scene Graph and Lighting Model", fontsize=14, fontweight="bold", y=0.98)
+    apply_suptitle(fig, "Three.js Scene Graph and Lighting Model")
 
-    out_dir = Path(__file__).resolve().parents[3] / "chapters" / "3"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_pdf = out_dir / "threejs_scene_graph_and_lighting_model.pdf"
-    fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=3)
+    save_pdf(fig, out_pdf)
     print(f"Saved {out_pdf}")
 
 

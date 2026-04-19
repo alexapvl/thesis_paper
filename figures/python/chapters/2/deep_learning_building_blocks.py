@@ -1,19 +1,16 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import FancyArrowPatch, Rectangle
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.size": 10,
-        "axes.linewidth": 0.6,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-    }
-)
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.style import apply_style
 
 
 def draw_cnn(ax):
@@ -179,6 +176,7 @@ def draw_transformer(ax):
 
 
 def main() -> None:
+    apply_style()
     fig = plt.figure(figsize=(15.0, 5.2))
     gs = fig.add_gridspec(1, 4, left=0.03, right=0.97, bottom=0.14, top=0.82, wspace=0.20)
 
@@ -220,11 +218,8 @@ def main() -> None:
 
     fig.suptitle("Deep Learning Building Blocks for Audio Analysis", fontsize=14, fontweight="bold", y=0.93)
 
-    out_dir = Path(__file__).resolve().parent.parent / "chapters" / "2"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_pdf = out_dir / "deep_learning_building_blocks.pdf"
-    fig.savefig(out_pdf, dpi=300)
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=2)
+    save_pdf(fig, out_pdf)
     print(f"Saved {out_pdf}")
 
 

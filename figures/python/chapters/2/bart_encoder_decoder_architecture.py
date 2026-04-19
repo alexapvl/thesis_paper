@@ -1,19 +1,16 @@
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, Rectangle
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.size": 10,
-        "axes.linewidth": 0.6,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-    }
-)
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.style import apply_style
 
 
 @dataclass
@@ -95,6 +92,7 @@ def arrow(ax, start, end, color="#334155", dashed=False):
 
 
 def main() -> None:
+    apply_style()
     fig, ax = plt.subplots(figsize=(14.8, 5.2))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
@@ -189,11 +187,8 @@ def main() -> None:
     arrow(ax, (decoder_tokens_in.left + 0.07, y_causal), (decoder_tokens_in.right - 0.07, y_causal), color="#7c3aed")
     ax.text(decoder_tokens_in.cx, y_causal - 0.018, "Causal decoding (left -> right)", ha="center", va="top", fontsize=7.1, color="#6d28d9")
 
-    out_dir = Path(__file__).resolve().parent.parent / "chapters" / "2"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_pdf = out_dir / "bart_encoder_decoder_architecture.pdf"
-    fig.savefig(out_pdf, dpi=300)
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=2)
+    save_pdf(fig, out_pdf)
     print(f"Saved {out_pdf}")
 
 

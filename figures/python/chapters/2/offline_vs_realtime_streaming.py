@@ -1,18 +1,17 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, Rectangle
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-plt.rcParams.update(
-    {
-        "font.family": "DejaVu Sans",
-        "font.size": 10,
-        "axes.linewidth": 0.7,
-    }
-)
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.style import apply_style
 
 
 def make_wave(n=1400):
@@ -35,6 +34,7 @@ def add_box(ax, x, y, w, h, text, fc="#ffffff", ec="#111827", fs=9.5):
 
 
 def main():
+    apply_style()
     fig, axes = plt.subplots(2, 1, figsize=(14, 7), gridspec_kw={"hspace": 0.36})
     fig.patch.set_facecolor("white")
 
@@ -177,11 +177,8 @@ def main():
     fig.suptitle("Offline Batch vs. Real-Time Streaming Audio Processing", fontsize=14, fontweight="bold", y=0.985)
     fig.add_artist(Line2D([0.06, 0.97], [0.505, 0.505], transform=fig.transFigure, color="#d1d5db", linewidth=0.8))
 
-    out_dir = Path(__file__).resolve().parent.parent / "chapters" / "2"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_pdf = out_dir / "offline_vs_realtime_streaming.pdf"
-    fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=2)
+    save_pdf(fig, out_pdf)
     print(f"Saved {out_pdf}")
 
 

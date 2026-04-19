@@ -1,21 +1,17 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, Rectangle
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-# Global style aligned with existing Python-generated figures
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.size": 10,
-        "axes.linewidth": 0.6,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-    }
-)
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.style import apply_style
 
 
 BEAT_POS = np.array([0.10, 0.30, 0.50, 0.70, 0.90], dtype=float)
@@ -135,6 +131,7 @@ def draw_postprocessed_beats(ax):
 
 
 def main() -> None:
+    apply_style()
     fig = plt.figure(figsize=(14.5, 4.8))
     gs = fig.add_gridspec(1, 4, left=0.04, right=0.98, bottom=0.16, top=0.76, wspace=0.24)
 
@@ -184,11 +181,8 @@ def main() -> None:
 
     fig.suptitle("Beat Tracking Pipeline", fontsize=14, fontweight="bold", y=0.93)
 
-    out_dir = Path(__file__).resolve().parent.parent / "chapters" / "2"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_pdf = out_dir / "beat_tracking_pipeline.pdf"
-    fig.savefig(out_pdf, dpi=300)
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=2)
+    save_pdf(fig, out_pdf)
     print(f"Saved {out_pdf}")
 
 

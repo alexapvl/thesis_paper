@@ -1,20 +1,17 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
+import sys
 
+ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-# Global style aligned with existing Python-generated figures
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.size": 10,
-        "axes.linewidth": 0.6,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-    }
-)
+from figures.python.io import output_pdf_path, save_pdf
+from figures.python.style import apply_style
 
 
 def main() -> None:
+    apply_style()
     rows = [
         (
             "Spectral",
@@ -88,10 +85,8 @@ def main() -> None:
 
     fig.tight_layout()
 
-    out_dir = Path(__file__).resolve().parent.parent
-    out_pdf = out_dir / "audio_feature_summary.pdf"
-    fig.savefig(out_pdf, dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    out_pdf = output_pdf_path(__file__, chapter=2)
+    save_pdf(fig, out_pdf)
 
     print(f"Saved {out_pdf}")
 
