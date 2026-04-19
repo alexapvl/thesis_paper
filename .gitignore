@@ -30,5 +30,6 @@ _minted-*/
 
 ## Python
 .venv/
+__pycache__/
 
 *.pdf
