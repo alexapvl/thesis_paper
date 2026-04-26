@@ -7,29 +7,10 @@ ROOT = Path(__file__).resolve().parents[4]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from figures.python.components import directed_edge, rounded_box
+from figures.python.components import directed_edge, flow_node
 from figures.python.io import output_pdf_path, save_pdf
 from figures.python.palette import color
 from figures.python.style import apply_style, apply_suptitle
-
-
-def node(ax, xy, w, h, text, fc, ec="#334155", fs=8.6, bold=False):
-    rounded_box(
-        ax,
-        xy,
-        (w, h),
-        text,
-        box_overrides={
-            "boxstyle": "round,pad=0.008,rounding_size=0.02",
-            "facecolor": fc,
-            "edgecolor": ec,
-        },
-        text_overrides={
-            "fontsize": fs,
-            "fontweight": "bold" if bold else "normal",
-            "color": color("text_primary"),
-        },
-    )
 
 
 def link(
@@ -83,20 +64,20 @@ def main() -> None:
     websocket = (0.62, 0.245)
     python_server = (0.91, 0.245)
 
-    node(ax, mic, 0.11, 0.09, "Microphone", fc="#dbeafe", bold=True)
-    node(ax, gum, 0.17, 0.1, "getUserMedia()\nMediaStreamAudioSourceNode", fc="#dbeafe", fs=8.3)
+    flow_node(ax, mic, (0.11, 0.09), "Microphone", facecolor="#dbeafe", bold=True)
+    flow_node(ax, gum, (0.17, 0.1), "getUserMedia()\nMediaStreamAudioSourceNode", facecolor="#dbeafe", fontsize=8.3)
 
-    node(ax, file_in, 0.11, 0.09, "Audio File", fc="#dbeafe", bold=True)
-    node(ax, decode, 0.17, 0.1, "decodeAudioData()\nAudioBufferSourceNode", fc="#dbeafe", fs=8.3)
+    flow_node(ax, file_in, (0.11, 0.09), "Audio File", facecolor="#dbeafe", bold=True)
+    flow_node(ax, decode, (0.17, 0.1), "decodeAudioData()\nAudioBufferSourceNode", facecolor="#dbeafe", fontsize=8.3)
 
-    node(ax, gain, 0.11, 0.09, "GainNode", fc="#e0f2fe")
-    node(ax, analyser, 0.12, 0.09, "AnalyserNode", fc="#e0f2fe", bold=True)
-    node(ax, worklet, 0.12, 0.09, "AudioWorkletNode", fc="#e0f2fe", bold=True)
-    node(ax, destination, 0.15, 0.09, "AudioDestinationNode\n(Speakers)", fc="#e0f2fe", fs=8.0)
+    flow_node(ax, gain, (0.11, 0.09), "GainNode", facecolor="#e0f2fe")
+    flow_node(ax, analyser, (0.12, 0.09), "AnalyserNode", facecolor="#e0f2fe", bold=True)
+    flow_node(ax, worklet, (0.12, 0.09), "AudioWorkletNode", facecolor="#e0f2fe", bold=True)
+    flow_node(ax, destination, (0.15, 0.09), "AudioDestinationNode\n(Speakers)", facecolor="#e0f2fe", fontsize=8.0)
 
-    node(ax, react_ui, 0.13, 0.1, "React UI\nwaveform/spectrum", fc="#dcfce7", ec="#15803d")
-    node(ax, websocket, 0.13, 0.1, "WebSocket\nupstream", fc="#dcfce7", ec="#15803d")
-    node(ax, python_server, 0.15, 0.1, "Python Server\nbeat + Skip-BART", fc="#dcfce7", ec="#15803d")
+    flow_node(ax, react_ui, (0.13, 0.1), "React UI\nwaveform/spectrum", facecolor="#dcfce7", edgecolor="#15803d")
+    flow_node(ax, websocket, (0.13, 0.1), "WebSocket\nupstream", facecolor="#dcfce7", edgecolor="#15803d")
+    flow_node(ax, python_server, (0.15, 0.1), "Python Server\nbeat + Skip-BART", facecolor="#dcfce7", edgecolor="#15803d")
 
     # Main links
     link(ax, (mic[0] + 0.055, mic[1]), (gum[0] - 0.085, gum[1]), color="#2563eb")

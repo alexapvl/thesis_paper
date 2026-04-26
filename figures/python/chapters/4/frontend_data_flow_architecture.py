@@ -7,26 +7,10 @@ ROOT = Path(__file__).resolve().parents[4]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from figures.python.components import directed_edge, rounded_box
+from figures.python.components import directed_edge, flow_node
 from figures.python.io import output_pdf_path, save_pdf
 from figures.python.palette import color
 from figures.python.style import apply_style, apply_suptitle, get_figsize
-
-
-def node(ax, center, size, text, fill_token, edge_token, bold=False):
-    rounded_box(
-        ax,
-        center,
-        size,
-        text,
-        box_overrides={
-            "boxstyle": "round,pad=0.008,rounding_size=0.02",
-            "facecolor": color(fill_token),
-            "edgecolor": color(edge_token),
-            "linewidth": 1.0,
-        },
-        text_overrides={"fontweight": "bold" if bold else "normal"},
-    )
 
 
 def main() -> None:
@@ -55,22 +39,22 @@ def main() -> None:
     py_server = (0.90, 0.71)
 
     # Draw nodes
-    node(ax, mic, (0.16, 0.09), "Microphone\n(getUserMedia)", "audio_fill", "audio_edge", bold=True)
-    node(ax, file_in, (0.16, 0.09), "Audio File\n(decodeAudioData)", "audio_fill", "audio_edge", bold=True)
-    node(ax, web_audio, (0.20, 0.10), "Web Audio API", "audio_fill", "audio_edge", bold=True)
+    flow_node(ax, mic, (0.16, 0.09), "Microphone\n(getUserMedia)", fill_token="audio_fill", edge_token="audio_edge", bold=True)
+    flow_node(ax, file_in, (0.16, 0.09), "Audio File\n(decodeAudioData)", fill_token="audio_fill", edge_token="audio_edge", bold=True)
+    flow_node(ax, web_audio, (0.20, 0.10), "Web Audio API", fill_token="audio_fill", edge_token="audio_edge", bold=True)
 
-    node(ax, speakers, (0.18, 0.085), "AudioDestinationNode\n(Speakers)", "audio_fill", "audio_edge")
-    node(ax, analyser, (0.18, 0.085), "AnalyserNode", "audio_fill", "audio_edge")
-    node(ax, worklet, (0.18, 0.085), "AudioWorkletNode", "audio_fill", "audio_edge")
+    flow_node(ax, speakers, (0.18, 0.085), "AudioDestinationNode\n(Speakers)", fill_token="audio_fill", edge_token="audio_edge")
+    flow_node(ax, analyser, (0.18, 0.085), "AnalyserNode", fill_token="audio_fill", edge_token="audio_edge")
+    flow_node(ax, worklet, (0.18, 0.085), "AudioWorkletNode", fill_token="audio_fill", edge_token="audio_edge")
 
-    node(ax, ws_up, (0.16, 0.085), "WebSocket\n(upstream)", "ws_fill", "ws_edge")
-    node(ax, ws_down, (0.16, 0.085), "WebSocket\n(downstream)", "ws_fill", "ws_edge")
-    node(ax, py_server, (0.1, 0.105), "Python Server\nBeat + Skip-BART", "ws_fill", "ws_edge", bold=True)
+    flow_node(ax, ws_up, (0.16, 0.085), "WebSocket\n(upstream)", fill_token="ws_fill", edge_token="ws_edge")
+    flow_node(ax, ws_down, (0.16, 0.085), "WebSocket\n(downstream)", fill_token="ws_fill", edge_token="ws_edge")
+    flow_node(ax, py_server, (0.1, 0.105), "Python Server\nBeat + Skip-BART", fill_token="ws_fill", edge_token="ws_edge", bold=True)
 
-    node(ax, store, (0.2, 0.095), "Zustand Store", "store_fill", "store_edge", bold=True)
-    node(ax, react_ui, (0.15, 0.095), "React UI\ncomponents", "render_fill", "render_edge")
-    node(ax, r3f_loop, (0.15, 0.095), "R3F useFrame\nloop", "render_fill", "render_edge")
-    node(ax, three_scene, (0.15, 0.095), "Three.js Scene\n(SpotLights)", "render_fill", "render_edge")
+    flow_node(ax, store, (0.2, 0.095), "Zustand Store", fill_token="store_fill", edge_token="store_edge", bold=True)
+    flow_node(ax, react_ui, (0.15, 0.095), "React UI\ncomponents", fill_token="render_fill", edge_token="render_edge")
+    flow_node(ax, r3f_loop, (0.15, 0.095), "R3F useFrame\nloop", fill_token="render_fill", edge_token="render_edge")
+    flow_node(ax, three_scene, (0.15, 0.095), "Three.js Scene\n(SpotLights)", fill_token="render_fill", edge_token="render_edge")
 
     # Audio path
     directed_edge(ax, (0.21, 0.805), (0.26, 0.76), arrow_overrides={"color": color("audio_edge"), "linewidth": 1.2})
@@ -157,7 +141,7 @@ def main() -> None:
 
     apply_suptitle(fig, "Frontend Data Flow Architecture")
 
-    out_pdf = output_pdf_path(__file__, chapter=3)
+    out_pdf = output_pdf_path(__file__, chapter=4)
     save_pdf(fig, out_pdf)
     print(f"Saved {out_pdf}")
 

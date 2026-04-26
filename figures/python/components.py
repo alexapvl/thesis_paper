@@ -85,3 +85,40 @@ def directed_edge(
             text_style.update(label_overrides)
         ax.text(mx, my, label, **text_style)
     return arr
+
+
+def flow_node(
+    ax: Axes,
+    center: tuple[float, float],
+    size: tuple[float, float],
+    text: str,
+    *,
+    fill_token: str | None = None,
+    edge_token: str | None = None,
+    facecolor: str | None = None,
+    edgecolor: str | None = None,
+    bold: bool = False,
+    fontsize: float = 8.5,
+    linewidth: float = 1.0,
+    pad: float = 0.008,
+    rounding_size: float = 0.02,
+) -> FancyBboxPatch:
+    resolved_face = facecolor if facecolor is not None else color(fill_token or "panel_bg")
+    resolved_edge = edgecolor if edgecolor is not None else color(edge_token or "panel_border")
+    return rounded_box(
+        ax,
+        center,
+        size,
+        text,
+        box_overrides={
+            "boxstyle": f"round,pad={pad},rounding_size={rounding_size}",
+            "facecolor": resolved_face,
+            "edgecolor": resolved_edge,
+            "linewidth": linewidth,
+        },
+        text_overrides={
+            "fontsize": fontsize,
+            "fontweight": "bold" if bold else "normal",
+            "color": color("text_primary"),
+        },
+    )

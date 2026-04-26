@@ -1,0 +1,143 @@
+\chapter{Methodological Approach, Requirements, and System Design}
+\label{chap:methodology-requirements-system-design}
+
+This chapter translates the technology and platform constraints from Chapter 3 into a concrete system design by defining the methodological framing, deriving the requirements the prototype must satisfy, and specifying the resulting architecture and runtime structure.
+
+Positioned between technology selection (Chapter 3) and implementation (Chapter 5), this chapter serves as the design bridge between technical rationale and concrete execution.
+
+\section{Methodological Framing}
+
+The system is developed through an iterative prototype methodology oriented toward real-time interaction quality. Each iteration couples three activities: implementing a candidate processing and control path, measuring its responsiveness and stability during live playback, and refining module boundaries and communication patterns to reduce latency and improve robustness.
+
+This methodology is constraint-driven rather than purely abstract. Architectural choices must respond to concrete limits already identified in the previous chapter, including browser thread contention, browser memory limits, real-time audio constraints, and the deployment implications of a hybrid browser-plus-Python stack.
+
+This methodology follows from the problem itself: the system must analyse audio and generate lighting responses while music is playing. Because latency accumulates across audio capture, feature extraction, inference, message transport, and rendering, the design cannot optimize any single stage in isolation.
+
+A further methodological consequence is that design quality must be judged not only by algorithmic correctness, but also by whether the integrated prototype remains perceptually responsive during use. Chapter 2 established that sound-to-light systems tolerate more delay than instrumental interaction, but still require synchronization tight enough to appear aligned with musical events. For this reason, the present chapter treats system design as the disciplined management of latency, modularity, and usability under the constraints imposed by the chosen platform.
+
+\section{System Requirements}
+
+Based on the thesis objectives, the Chapter 3 platform constraints, and the earlier application requirements, the system design is guided by a compact set of functional and non-functional requirements.
+
+\subsection{R1. Real-time responsiveness}
+
+End-to-end audio-to-light updates must remain within a perceptually synchronous latency budget during interactive playback. This target is justified both by the Chapter 2 discussion of sound-to-light latency and by the practical requirement specification that set a sub-100 ms end-to-end target for the application.
+
+\subsection{R2. Stable browser interaction}
+
+User-interface controls and 3D rendering must remain responsive while audio analysis and model inference are active. This requirement follows from the single-threaded nature of browser execution and from the goal of presenting an interactive stage environment rather than a passive offline visualization.
+
+\subsection{R3. Native model fidelity}
+
+Beat tracking and generative lighting inference should run with native Python and PyTorch implementations rather than browser-converted approximations. This preserves compatibility with published model weights and post-processing logic, and avoids the conversion burden and performance penalties associated with an in-browser Skip-BART deployment.
+
+\subsection{R4. Deterministic streaming interfaces}
+
+Communication between browser and server must use explicit, low-overhead message contracts suitable for real-time streaming and debugging. The chosen communication mechanism must support persistent bidirectional transfer, since raw audio travels upstream while beat and lighting parameters travel downstream in real time.
+
+\subsection{R5. Dual audio-source support}
+
+The prototype should support both microphone capture and audio-file playback as first-class input modes. From the standpoint of downstream processing, both modes should be normalized into the same real-time processing path so that the system is evaluated under consistent operating conditions.
+
+\subsection{R6. Playback and monitoring controls}
+
+The interaction layer should expose the controls necessary to inspect and operate the system during a thesis demonstration, including audio upload or microphone input, playback controls, timeline navigation, and live feedback such as BPM or inference status. These functions are justified because the prototype is intended not merely to compute outputs, but to make the underlying MIR pipeline observable and operable in real time.
+
+\subsection{R7. Lighting and scene controls}
+
+The prototype should allow the user to influence the generated output through lighting and scene-management controls such as enabling or disabling Skip-BART, adjusting global intensity or smoothing, manually overriding fixtures when needed, and saving or loading stage configurations. These requirements are appropriate at the design level because they describe user-facing capabilities rather than low-level implementation choices, and they support the broader project goal of turning research models into a practical interactive application.
+
+\subsection{R8. Thesis-demonstration deployability}
+
+The system must run reproducibly on a developer workstation with a browser frontend and a local inference server. This requirement reflects the accepted trade-off of the hybrid architecture: standalone web deployment is sacrificed in exchange for native model execution and tractable development complexity within the scope of the thesis.
+
+Taken together, these requirements avoid overcommitting the design to outdated assumptions such as mandatory browser-side model conversion. The earlier requirements document considered ONNX or TensorFlow.js deployment paths and local server fallback, but the thesis now justifiably treats server-side inference as the primary architectural decision rather than a backup option.
+
+\section{Architectural Design Decisions}
+
+\subsection{Hybrid deployment as the governing decision}
+\label{sec:ch4-hybrid-governing-decision}
+
+The central architectural decision is a browser--server partition. The justification for this partition is established in Section~\ref{sec:ch3-machine-learning-deployment}; here, the focus is on the design consequences of that partition. The remaining decisions in this section --- module ownership, state management, and communication protocol --- derive from this split rather than re-justify it.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/4/high_level_hybrid_system_architecture.pdf}
+    \caption{High-level hybrid system architecture. The browser client handles audio input, user interface, shared frontend state, and Three.js rendering, while a local Python inference server hosts beat tracking and Skip-BART. A bidirectional WebSocket channel connects the two runtimes for upstream audio streaming and downstream control outputs.}
+\end{figure}
+
+\subsection{Browser-side audio handling and rendering}
+\label{sec:ch4-browser-audio-rendering}
+
+The browser owns user-proximal tasks: audio input, the Web Audio graph, local analysis, 3D rendering, and the user interface. This allocation preserves the accessibility advantages of the web platform while ensuring that interaction and visualization remain tightly coupled to the presentation layer. The detailed treatment of how the two audio sources are unified into a single processing path is presented in Section~\ref{sec:ch4-frontend-runtime-data-flow} as part of the resulting frontend data flow.
+
+\subsection{Native inference on the Python server}
+\label{sec:ch4-native-inference}
+
+The Python server module owns two responsibilities: real-time beat tracking and Skip-BART inference. Both run in their original Python and PyTorch form so that published model weights and post-processing logic remain authoritative, in line with Requirement R3.
+
+The design implication is that the server is treated as the canonical environment for model execution. Any other module that needs inference outputs must obtain them through the streaming interface defined in Section~\ref{sec:ch4-communication-protocol}, rather than maintaining a parallel inference path.
+
+\subsection{Shared state and selective rendering updates}
+\label{sec:ch4-shared-state}
+
+To satisfy Requirement R2 under the browser execution model identified in Chapter 3, the architecture must avoid pushing high-frequency lighting updates through unnecessarily expensive UI reconciliation paths. The selected React + R3F + Zustand stack supports this by pairing a declarative UI layer with a 3D rendering layer and a lightweight shared store suited to rapidly changing visual parameters.
+
+The resulting design rule is that the UI and the rendering loop consume shared state differently but coherently: UI components subscribe to the control and status slices they need, while the rendering path applies lighting updates at frame rate. The same store is the single source of truth for both interaction and rendering.
+
+\subsection{Communication protocol and runtime assumptions}
+\label{sec:ch4-communication-protocol}
+
+The browser--server boundary uses the WebSocket transport selected in Section~\ref{sec:ch3-realtime-communication}. At the design level, what matters is the message contract on that channel: raw PCM chunks travel upstream from the browser to the server, while beat positions, tempo values, and lighting parameters travel downstream. This direction of flow is what the rest of the system design relies on, and it is the integration point referenced by both Sections~\ref{sec:ch4-native-inference} and~\ref{sec:ch4-shared-state}.
+
+The intended runtime is a developer workstation running a Chromium-based browser and a local Python server, in line with Requirement R8.
+
+\section{Resulting System Architecture}
+
+\subsection{High-level module decomposition}
+
+The decisions above yield a hybrid client-server architecture with the following principal runtime modules: an audio-input and playback layer, a Web Audio processing layer, a transport layer, a shared frontend state layer, a user-interface layer, a Three.js rendering layer, and a backend inference layer. Each module has a focused responsibility while participating in a single continuous real-time pipeline.
+
+\subsection{Frontend runtime data flow}
+\label{sec:ch4-frontend-runtime-data-flow}
+
+Within the browser, microphone and file-based inputs are normalized into a shared Web Audio processing graph. That graph simultaneously supports audio playback, local analysis through the AnalyserNode, and stream extraction through the AudioWorkletNode.
+
+Downstream server messages carry beat positions, tempo updates, and lighting parameters. These outputs update shared frontend state, from which both the user-interface layer and the 3D rendering path consume synchronized values. UI controls also write user-adjustable parameters back into that state layer, ensuring that interaction and rendering operate over a single coherent model of the current system state.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/4/frontend_data_flow_architecture.pdf}
+    \caption{Frontend runtime data-flow architecture showing microphone and file inputs entering the Web Audio graph, branches to playback/analysis/streaming, bidirectional WebSocket exchange with the Python inference server, and shared frontend state consumed by React UI components and the R3F rendering path.}
+\end{figure}
+
+\subsection{End-to-end runtime pipeline}
+
+At runtime, the pipeline proceeds in five stages:
+\begin{enumerate}
+    \item audio is captured from the microphone or decoded and replayed from a file in the browser;
+    \item the Web Audio graph provides local analysis support and exposes streamable audio chunks through the AudioWorklet;
+    \item those chunks are transmitted over WebSocket to the Python server;
+    \item the server performs beat tracking and Skip-BART inference and emits beat and lighting parameters;
+    \item the browser ingests these outputs into shared state and applies them to interface updates and scene rendering in real time.
+\end{enumerate}
+
+This pipeline satisfies the architectural intent established earlier in the chapter. Rendering and interaction stay close to the user-facing runtime, whereas model execution remains in the environment best suited to native PyTorch workloads. The overall design therefore operationalizes the Chapter 3 technology selections while satisfying the methodological and requirement-level criteria defined above.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/4/end_to_end_runtime_pipeline.pdf}
+    \caption{End-to-end runtime pipeline. The figure summarizes five stages: audio input, browser-side Web Audio processing, WebSocket transport, backend beat-tracking and Skip-BART inference, and final state-driven scene updates in the browser.}
+\end{figure}
+
+\subsection{Latency-budget perspective and bridge to implementation}
+
+The architecture can also be read as an explicit allocation of the latency budget identified in Chapter 3. Each design decision earlier in this chapter has a budget consequence: native inference removes model-conversion overhead, the WebSocket channel removes per-message protocol cost, the shared-store rendering rule removes UI reconciliation cost on the hot path, and the unified Web Audio graph removes input-mode-specific divergence. Together, these decisions are what make the sub-100 ms end-to-end target structurally feasible rather than incidentally achieved.
+
+The design therefore commits to a latency-aware partition of responsibilities. Chapter 5 examines how that partition is realized in code, what engineering trade-offs arose during implementation, and what evidence demonstrates a working real-time prototype.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/chapters/4/latency_budget_breakdown.pdf}
+    \caption{Latency-budget breakdown across the runtime pipeline. The chart decomposes estimated latency contributions from browser audio output, WebSocket transport, backend inference, and rendering/state update, and relates their aggregate to the target synchronization threshold.}
+\end{figure}
