@@ -34,13 +34,29 @@
 \pagenumbering{roman} 
 
 \cleardoublepage
-ABSTRACT
+ABSTRACT (EN)
 \vspace{0.5cm}	
 \hrule
 \vspace{0.5cm}	
 %\cleardoublepage
 
-Abstract: un rezumat în limba engleză cu prezentarea, pe scurt, a conținutului pe capitole, punând accent pe contribuțiile proprii și originalitate
+This thesis presents the design and development of a real-time generative stage-lighting system that transforms musical input into synchronized visual output. The work is situated at the intersection of Music Information Retrieval, automatic stage lighting control, real-time audio processing, and interactive web-based 3D rendering. It builds on MIR techniques for extracting meaningful information from music, including rhythm and audio features, and applies them to a sound-to-light pipeline in which musical analysis directly drives lighting behavior.
+
+Chapter~\ref{chap:theoretical-background} introduces the audio, musical, perceptual, and machine-learning foundations required by the system, from digital audio representation and beat tracking to music-colour associations, automated stage lighting control, real-time processing, and sequence-to-sequence architectures. Chapter~\ref{chap:technologies-and-platform-constraints} evaluates the web as a platform for real-time audio-visual applications, including WebGL, Three.js, the Web Audio API, machine-learning deployment, React, React Three Fiber, and the platform constraints that shape the prototype. Chapter~\ref{chap:methodology-requirements-system-design} defines the methodological approach, requirements, hybrid architecture, runtime data flow, and latency-aware pipeline of the system.
+
+The main personal contribution is the integration of research-oriented MIR and generative lighting models into an interactive application that can operate as a practical real-time prototype. The system combines browser-based audio capture and 3D rendering with a Python inference server running beat tracking and Skip-BART, connected through WebSocket communication and shared frontend state. Its originality lies not in proposing a new MIR model, but in designing and implementing a coherent sound-to-light application that turns existing models into a responsive creative tool, with explicit attention to usability, latency, architecture, and expressive music-visual mapping.
+
+\cleardoublepage
+ABSTRACT (RO)
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}
+
+Această lucrare prezintă proiectarea și dezvoltarea unui sistem generativ de iluminat scenic în timp real, care transformă intrarea muzicală în ieșire vizuală sincronizată. Lucrarea este situată la intersecția dintre Music Information Retrieval, controlul automat al iluminatului scenic, procesarea audio în timp real și randarea 3D interactivă bazată pe web. Ea se bazează pe tehnici MIR pentru extragerea informațiilor relevante din muzică, inclusiv ritm și trăsături audio, și le aplică într-un flux sunet-lumină în care analiza muzicală conduce direct comportamentul luminilor.
+
+Capitolul~\ref{chap:theoretical-background} introduce fundamentele audio, muzicale, perceptuale și de învățare automată necesare sistemului, de la reprezentarea audio digitală și urmărirea beat-ului până la asocieri muzică-culoare, control automat al iluminatului scenic, procesare în timp real și arhitecturi sequence-to-sequence. Capitolul~\ref{chap:technologies-and-platform-constraints} evaluează web-ul ca platformă pentru aplicații audio-vizuale în timp real, incluzând WebGL, Three.js, Web Audio API, opțiuni de deployment pentru machine learning, React, React Three Fiber și constrângerile platformei care modelează prototipul. Capitolul~\ref{chap:methodology-requirements-system-design} definește abordarea metodologică, cerințele, arhitectura hibridă, fluxul de date la rulare și pipeline-ul sistemului orientat pe latență.
+
+Contribuția personală principală este integrarea modelelor MIR și a modelelor generative de iluminat, orientate spre cercetare, într-o aplicație interactivă care poate funcționa ca prototip practic în timp real. Sistemul combină captură audio și randare 3D în browser cu un server Python de inferență care rulează beat tracking și Skip-BART, conectate prin comunicație WebSocket și stare partajată în frontend. Originalitatea lucrării nu constă în propunerea unui model MIR nou, ci în proiectarea și implementarea unei aplicații sunet-lumină coerente care transformă modele existente într-un instrument creativ responsiv, cu atenție explicită la utilizabilitate, latență, arhitectură și mapare expresivă muzică-vizual.
 
 
 
