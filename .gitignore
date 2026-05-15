@@ -33,3 +33,5 @@ _minted-*/
 __pycache__/
 
 *.pdf
+
+*.DS_Store
