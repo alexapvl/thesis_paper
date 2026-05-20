@@ -14,7 +14,7 @@ The motivation for this thesis stems from the convergence of two passions: progr
 
 \section{Objectives}
 
-The objective of the thesis is to design and implement a real-time sound-to-light prototype for generative stage lighting. The system analyzes audio while it is playing, extracts information relevant to musical timing and visual control, and uses model outputs to update a virtual stage environment. Beyond the technical pipeline, the goal is to create an environment in which a user can freely experiment — testing scene ideas, exploring lighting concepts, and interacting with the visual output as a creative tool rather than a static visualization.
+The objective of the thesis is to design and implement a real-time sound-to-light prototype for generative stage lighting. The system analyzes audio while it is playing, extracts information relevant to musical timing and visual control, and uses model outputs to update a virtual stage environment. Beyond the technical pipeline, the goal is to create an environment in which a user can freely experiment — testing scene ideas, exploring lighting concepts, and interacting with the visual output as a creative tool rather than a static visualization. The full source code of the prototype is publicly available at \url{https://github.com/alexapvl/thesis_project}.
 
 The application follows a hybrid architecture: the browser handles audio input, playback, user interaction, and 3D scene rendering, while a local server performs beat detection and generative lighting inference. Audio data is streamed from the browser to the server, and musical and lighting parameters are sent back to drive real-time visual updates.
 
