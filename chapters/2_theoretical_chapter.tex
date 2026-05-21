@@ -4,7 +4,7 @@
 
 % \section{Theoretical Background}
 
-This chapter introduces the foundational concepts and theoretical frameworks that underpin the system presented in this thesis. It is organized to move from the general to the particular: beginning with how audio is represented and analyzed computationally, progressing through the musical and machine learning concepts the system relies on, and concluding with the real-time constraints that shape its design. The goal is to equip the reader with the knowledge necessary to understand the architectural and design decisions discussed in later chapters.
+This chapter introduces the foundational concepts and theoretical frameworks that underpin the system presented in this thesis. It is organized to move from the general to the particular: beginning with how audio is represented and analyzed computationally, progressing through the musical and machine learning concepts the system relies on, and concluding with the real-time constraints that shape its design. Two models in particular are central to the pipeline and are discussed throughout the chapter: BeatNet+, used for live beat and downbeat tracking, and Skip-BART, used for generating stage lighting sequences directly from music.
 
 \section{Music Information Retrieval Foundations}
 
@@ -24,9 +24,17 @@ The result of sampling and quantization is a sequence of numerical values, one p
 
 \subsection{The Short-Time Fourier Transform and Spectrograms}
 
-The most fundamental tool for analyzing the frequency content of an audio signal is the Fourier Transform, which decomposes a signal into its constituent sinusoidal components, revealing the frequencies present and their respective magnitudes. However, the standard Fourier Transform operates on the entire signal at once, producing a single frequency spectrum that loses all temporal information. For music, where frequency content changes continuously over time, this is inadequate.
+The most fundamental tool for analyzing the frequency content of an audio signal is the Fourier Transform, which decomposes a signal into its constituent sinusoidal components, revealing the frequencies present and their respective magnitudes. In discrete-time audio processing, the transform applied to a finite sequence of samples is the Discrete Fourier Transform (DFT):
+\[
+X_k = \sum_{n=0}^{N-1} x_n\, e^{-i 2\pi k n / N}, \qquad k = 0, \ldots, N-1
+\]
+where \(x_n\) denotes the \(n\)-th sample in the window, \(N\) is the window length, and \(X_k\) is the complex coefficient corresponding to frequency bin \(k\). In practice, this computation is performed efficiently using the Fast Fourier Transform (FFT), which makes it suitable for repeated application across many short windows. However, the standard Fourier Transform operates on the entire signal at once, producing a single frequency spectrum that loses all temporal information. For music, where frequency content changes continuously over time, this is inadequate.
 
-The Short-Time Fourier Transform (STFT) addresses this limitation by applying the Fourier Transform to short, overlapping segments (or `windows`) of the signal rather than to the signal as a whole. Each window, typically 20 to 50 milliseconds in duration, is assumed to be approximately stationary, meaning its frequency content does not change significantly within that short interval. The STFT slides this window across the signal with a defieed hop size (the distance between successive windows), computing a frequency spectrum for each position. The result is a two-dimensional representation with time on one axis and frequency on the other, where the value at each point indicates the magnitude of a given frequency at a given moment. This representation is called a spectrogram. 
+The Short-Time Fourier Transform (STFT) addresses this limitation by applying the Fourier Transform to short, overlapping segments (or `windows`) of the signal rather than to the signal as a whole. Each window, typically 20 to 50 milliseconds in duration, is assumed to be approximately stationary, meaning its frequency content does not change significantly within that short interval. Formally, the STFT can be written as
+\[
+X(m, k) = \sum_{n=0}^{N-1} x[n + mH]\, w[n]\, e^{-i 2\pi k n / N}
+\]
+where \(w[n]\) is a window function of length \(N\), \(H\) is the hop size between successive windows, and \(m\) indexes the frame in time. The STFT slides this window across the signal with a defined hop size (the distance between successive windows), computing a frequency spectrum for each position. The result is a two-dimensional representation with time on one axis and frequency on the other, where the value at each point indicates the magnitude of a given frequency at a given moment. This representation is called a spectrogram. 
 
 \begin{figure}[htbp]
     \centering
@@ -38,6 +46,8 @@ The Short-Time Fourier Transform (STFT) addresses this limitation by applying th
 The choice of window size involves a fundamental trade-off between temporal and frequency resolution. Shorter windows provide better temporal resolution (the ability to pinpoint when a frequency appears) but worse frequency resolution (the ability to distinguish between closely spaced frequencies). Longer windows provide the opposite.  This trade-off is inherent to the uncertainty principle in signal processing and cannot be avoided, only managed according to the requirements of the task\cite{hendrikpurwins20191}.
 
 The spectrogram is a powerful representation because it makes the structure of audio visually apparent: sustained tones appear as horizontal bands, percussive events as vertical lines, and harmonic sounds as stacks of parallel bands at integer multiples of a fundamental frequency.  However, the raw STFT spectrogram has a linear frequency axis, which does not correspond well to how humans perceive pitch.
+
+In this thesis, the STFT — implemented as a sequence of FFT-computed DFTs over short windows — is the underlying analysis tool for all downstream representations, including the mel spectrograms used as input to the beat-tracking and lighting-generation models.
 
 \subsection{The Mel Scale and Mel Spectrograms}
 
@@ -71,7 +81,7 @@ While spectrograms provide a rich, general-purpose representation of audio, many
     \caption{Summary of major audio feature categories used in MIR, with representative descriptors and the corresponding musical qualities they capture.}
 \end{figure}
 
-The choice of which features to extract depends on the task at hand. Beat tracking systems typically operate on onset strength functions or spectral flux, while systems concerned with mood or energy may rely more heavily on spectral centroid, loudness curves, and MFCCs. For the system described in this thesis, which must translate audio into lighting parameters that reflect both rhythmic and timbral qualities of the music, a combination of spectral, temporal, and rhythmic features is relevant. The specific feature extraction pipeline is discussed in Chapter 6.
+The choice of which features to extract depends on the task at hand. Beat tracking systems typically operate on onset strength functions or spectral flux, while systems concerned with mood or energy may rely more heavily on spectral centroid, loudness curves, and MFCCs. For the system described in this thesis, which must translate audio into lighting parameters that reflect both rhythmic and timbral qualities of the music, a combination of spectral, temporal, and rhythmic features is relevant. The specific feature extraction pipeline is discussed in \hyperref[chap:implementation]{Chapter~\ref*{chap:implementation}}.
 
 \section{Musical Structure and Beat Tracking}
 
