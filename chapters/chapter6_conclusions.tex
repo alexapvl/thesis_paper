@@ -1,5 +1,32 @@
-\chapter{Concluzii}
-%\chapter*{Concluzii}
+\chapter{Conclusions and Future Work}
 \label{conclusions}
 
-\par Concluzii ...
+This thesis set out to design and implement a real-time sound-to-light prototype that analyses music as it plays and drives a generative stage-lighting scene from the result. The preceding chapters traced that goal from theory (\fullref{chap:theoretical-background}{Chapter}) and platform analysis (\fullref{chap:technologies-and-platform-constraints}{Chapter}) through a concrete system design (\fullref{chap:methodology-requirements-system-design}{Chapter}), its code-level realisation (\fullref{chap:implementation}{Chapter}), and an empirical evaluation (\fullref{chap:evaluation}{Chapter}). This final chapter consolidates what the prototype achieved and where its limits lie, and then outlines the directions that would most improve it.
+
+\section{Conclusions}
+
+The prototype delivers a complete, working sound-to-light pipeline. A browser captures or plays audio, streams it as mono PCM over a single typed WebSocket channel to a Python inference server, and renders an interactive 3D stage from the beat and lighting messages that return. The server runs BeatNet for rhythm tracking and an adapted Skip-BART for generative lighting, while the browser owns the audio graph, a scene editor backed by an explicit scene document, and a runtime renderer driven by shared state rather than by React reconciliation. The system is therefore not a collection of isolated experiments but a coherent application in which existing research models are turned into a responsive creative tool, which was the central aim of the work.
+
+The evaluation shows that the system meets its responsiveness goal where it matters most and exposes a clear limit where it does not. The beat-driven path is genuinely real-time: on a local configuration the beat-to-light latency sits well inside the sub-100\,ms window in which sound and light are perceived as synchronous, and a tempo-locked synthesis fallback keeps the visuals responsive even when the tracker misses individual beats. The generative lighting path is the opposite story. Because Skip-BART was designed to generate a lighting track for a whole piece offline rather than to stream, the prototype approximates streaming by re-running inference over a rolling window on a background worker, and each pass takes several seconds and is dominated by audio-feature extraction rather than by the device running the model. The practical consequence is that lighting arrives in bursts rather than as a smooth real-time signal. Read together, these results support a single conclusion: the architecture --- the browser--server partition, the typed protocol, the unified audio path, and the shared-state rendering rule --- is sound and meets its latency budget, while the generative model is the component that limits how close the system gets to true real-time generation.
+
+The contribution of this thesis is therefore one of integration rather than of a new model. It demonstrates how a research-oriented, offline generative lighting model can be embedded in a live, interactive pipeline through windowing, asynchronous inference, and a clean separation between runtime and editable scene state, and it provides a reusable benchmark harness that measures the resulting system end to end. The honest assessment is that the prototype is a successful proof of concept for the architecture and a faithful demonstration of where the remaining engineering and modelling effort needs to go.
+
+\section{Future Work}
+
+Several directions, grouped below by theme, would build on this prototype. They follow naturally from the limitations identified in the evaluation and from the creative goals set out in the introduction.
+
+\subsection{Models and Generation}
+
+The most direct improvement is to train the generative model on electronic dance music. Skip-BART was not trained on EDM, yet EDM is precisely the material this system targets, where build-ups, drops, and timbral shifts are the expressive events lighting should respond to. A second extension is to widen the output modality: the current model produces only hue and brightness, so a unified, multi-task model that also generates fixture movement (pan and tilt) would cover the full vocabulary of expressive stage lighting in a single network. Finally, the system could be made structure-aware. The macro-structure of EDM tracks --- intros, build-ups, drops, and breakdowns discussed in \fullref{chap:theoretical-background}{Chapter} --- could modulate global lighting energy on top of per-frame generation, so that the visuals follow not only the local beat and timbre but also the larger arc of the track.
+
+\subsection{Real-Time Generation Performance}
+
+The evaluation identified the multi-second window pass as the system's defining bottleneck, and crucially located its cost in audio-feature extraction rather than in the generative decode or the inference device. Closing this gap is the highest-impact technical direction. Options include replacing the heavy embedding stage with a lighter or incremental feature extractor, adopting a causal or streaming generative formulation that consumes audio chunk by chunk instead of re-encoding a whole window, and reducing model cost through distillation or quantisation. Any of these would move the generative path from bursty pseudo-streaming toward the same smooth, low-latency behaviour the beat path already achieves.
+
+\subsection{Hardware Integration}
+
+The prototype renders to a virtual 3D stage, but the same lighting messages could drive physical fixtures. Adding an output bridge that maps the runtime lighting state to the DMX512 protocol, carried over a network transport such as Art-Net or sACN, would let the system control real luminaires and move it from a simulation toward a tool usable in an actual lighting rig.
+
+\subsection{Perceptual Evaluation}
+
+The evaluation in this thesis is quantitative: it measures latency, throughput, and per-stage timing, but it cannot say whether the generated lighting actually looks good or feels synchronised to a viewer. A natural next step is a perceptual study --- with general listeners or with expert lighting designers --- assessing perceived synchrony, aesthetic quality, and how well the lighting matches the music. Such a study would validate the artistic objective that motivated the project and complement the engineering metrics reported here.
