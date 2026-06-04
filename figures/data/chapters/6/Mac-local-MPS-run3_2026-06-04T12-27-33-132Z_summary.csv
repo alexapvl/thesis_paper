@@ -1,0 +1,33 @@
+# run_id=d11eb36f-5e67-4620-b963-61fd38477cfe
+# config_label=Mac-local-MPS
+# started_at=2026-06-04T12:27:33.132Z
+# duration_ms=65015
+# warmup_ms=5000
+# protocol_version=1.0.0
+# file_name=D# Fat (Original Mix).wav
+# file_duration_ms=328593.7708333333
+# chunk_size=2048
+# sample_rate=48000
+# chunks_sent=1523
+# chunks_received=1523
+# beats_real=17
+# beats_synthetic=121
+# lighting_frames=147
+# device=mps
+# beat_tracker=beatnet
+# skip_bart=skipbart
+# note_server_skip_ingest_queue_ms=time to enqueue chunk (not inference)
+# note_server_skip_drain_queue_ms=time to dequeue predictions (not inference)
+# note_server_skip_inference_ms=OpenL3 embed + Skip-BART decode on worker thread
+# note_server_stage_raw_t_ms=blank for backend samples (no client clock)
+metric,mean,p50,p95,p99,min,max,stddev,n
+beat.e2e_ms,21.827,9.000,100.000,120.000,2.000,159.000,29.846,127
+lighting.e2e_ms,16.039,17.000,25.000,25.000,3.000,25.000,6.564,129
+lighting.fps,2.564,2.564,2.564,2.564,2.564,2.564,0.000,1
+network.rtt_ms,11.750,2.000,86.000,86.000,0.000,86.000,23.048,12
+server.beat.drain_ms,8.853,0.002,62.737,112.005,0.000,158.278,22.872,1523
+server.beat.ingest_ms,1.521,1.038,3.670,7.080,0.434,53.527,2.381,1523
+server.dwell_ms,11.744,1.645,68.956,103.089,0.642,152.243,24.160,132
+server.skip.drain_queue_ms,0.006,0.005,0.011,0.019,0.001,0.355,0.011,1523
+server.skip.inference_ms,7356.338,9687.502,11119.056,11119.056,2188.848,11119.056,3683.046,8
+server.skip.ingest_queue_ms,0.009,0.007,0.014,0.033,0.001,0.517,0.019,1523

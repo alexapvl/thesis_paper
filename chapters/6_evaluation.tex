@@ -1,0 +1,128 @@
+\chapter{Evaluation}
+\label{chap:evaluation}
+
+This chapter evaluates the runtime behaviour of the prototype and compares two deployment configurations of the same system: the inference backend running locally on the development laptop using Apple's Metal Performance Shaders (MPS), and the backend running on a desktop workstation with an NVIDIA CUDA GPU, accessed by the browser frontend over a local-area network. The goal is not to benchmark the underlying models against published baselines---BeatNet and Skip-BART are used as released---but to characterise how the integrated system performs under real-time streaming, where the bottlenecks lie, and how sensitive end-to-end behaviour is to the choice of compute device and network path.
+
+The system under test is identical across configurations---same frontend, protocol, model weights, and audio source---so only the inference device and the transport path differ. A consequence is that two variables change at once between configurations: the compute device \emph{and} the network path. The analysis therefore separates \emph{server-side compute}, which isolates the device, from \emph{end-to-end latency}, which additionally reflects transport; conflating them would wrongly attribute network cost to the device. This distinction is maintained in every figure and table.
+
+\section{Experimental Setup}
+\label{sec:eval-setup}
+
+\subsection{Test configurations}
+
+Measurements were collected on the two machines summarised in Table~\ref{tab:eval-machines}. A third configuration, a university GPU server, is reserved for future inclusion; the measurement tooling and figures are structured so that adding it requires only dropping its exported files alongside the existing ones.
+
+\begin{table}[htbp]
+\centering
+\caption{Test configurations. The Mac configuration runs the backend on the same host as the browser (loopback transport); the Windows configuration runs the backend on a separate desktop reached over a wired local-area network.}
+\label{tab:eval-machines}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & \textbf{Mac-local-MPS} & \textbf{Windows-CUDA-LAN} \\
+\midrule
+Role            & Laptop (dev machine)              & Desktop workstation \\
+CPU             & Apple M1 Pro, 10-core (8P+2E)     & Intel i7-8086K, 6c/12t @ 4.0\,GHz \\
+GPU / backend   & M1 Pro 16-core, MPS               & NVIDIA RTX 2070 Super 8\,GB, CUDA 12.4 \\
+Memory          & 16\,GB unified                    & 16\,GB DDR4 \\
+Operating system& macOS 26.5                        & Windows 11 25H2 (build 26200.8457) \\
+PyTorch         & 2.11.0                            & CUDA 12.4 build \\
+Transport path  & Loopback (same host)              & Gigabit Ethernet + SSH tunnel \\
+\bottomrule
+\end{tabular}
+% TODO: confirm exact Windows-side PyTorch version string before final submission.
+\end{table}
+
+Both machines were wired to the same router through a switch; no measurement used a wireless link. The Windows backend exposed its WebSocket endpoint through an SSH tunnel, which is the same mechanism used during development for remote-GPU operation.
+
+\subsection{Workload and protocol}
+
+The audio source for every run was a single electronic dance music (EDM) track, \emph{D\# Fat (Original Mix)} (approximately 5\,min 28\,s, decoded to mono 48\,kHz). The track was chosen deliberately: its strongly periodic, clearly articulated beat provides a stable rhythmic signal for the beat tracker, and---because Skip-BART was not trained on EDM---it represents an honest out-of-distribution input for the lighting model rather than a favourable one. All runs streamed audio from the same fixed start position to keep the workload identical.
+
+Each configuration was measured three times. A run streamed audio for 65\,s of wall-clock time, of which the first 5\,s are treated as warm-up and excluded from client-side statistics, leaving roughly 60\,s of measured streaming. Audio is transported as canonical 2048-sample chunks at 48\,kHz ($\approx$1{,}520 chunks per run); chunk accounting confirmed that the count received by the backend matched the count sent in every run, so no upstream samples were dropped.
+
+\subsection{Metrics}
+
+The benchmark records two families of measurements. \emph{End-to-end} metrics are timed on the client as the interval between the timestamp of the audio chunk that triggered an update and the moment that update is applied in the browser; these include beat and lighting delivery latency and the WebSocket round-trip time (RTT). \emph{Server-side} metrics are timed on the backend and exclude all transport: the per-chunk processing dwell, BeatNet's enqueue and inference-drain times, the Skip-BART window pass (OpenL3 feature extraction followed by autoregressive decoding), and the worker-thread queue handoffs that bound the asynchronous design's overhead.
+
+Because Skip-BART is autoregressive and was not designed for streaming, the backend approximates streaming by periodically re-running inference over a rolling audio window on a background worker thread (\hyperref[chap:implementation]{Chapter~\ref*{chap:implementation}}). One inference sample therefore corresponds to one window pass, which emits a \emph{burst} of lighting frames rather than a single frame---a distinction central to interpreting the lighting results below.
+
+\section{Results}
+\label{sec:eval-results}
+
+\subsection{Lighting generation is feature-extraction bound, not device bound}
+
+The dominant cost in the pipeline is the Skip-BART window pass. Figure~\ref{fig:eval-inference} shows its distribution pooled across the three runs of each configuration. The two distributions overlap almost entirely: the CUDA workstation averages 7.4\,s per pass against 8.1\,s on MPS, a difference of roughly 8\,\% that is small relative to the within-configuration spread (both range from about 2.2\,s to over 11\,s). A discrete GPU with native CUDA does not deliver the order-of-magnitude speed-up one might expect from the decode step alone.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.96\textwidth]{figures/chapters/6/skip_inference_distribution.pdf}
+    \caption{Skip-BART inference time per rolling-window pass, pooled across three runs per configuration. Boxes show quartiles, points show individual passes, and the diamond marks the mean. The heavy overlap indicates that the compute device is not the primary determinant of inference cost.}
+    \label{fig:eval-inference}
+\end{figure}
+
+The explanation is that a \texttt{server.skip.inference} sample combines two stages with very different hardware profiles: OpenL3 audio-embedding extraction and the Skip-BART autoregressive decode. The embedding stage is the heavier and less GPU-amenable of the two in this deployment, so it dominates the combined time and compresses the gap between MPS and CUDA. The practical consequence is that the effective lighting update rate is essentially the same on both machines---approximately 2.5 lighting bursts per second on MPS and 2.7 on CUDA---because the cadence is gated by this window pass rather than by transport or by the decode device.
+
+\subsection{Server-side compute is comparable; BeatNet drain favours the M1 Pro}
+
+Figure~\ref{fig:eval-server} compares the remaining server-side stages, which are three to four orders of magnitude cheaper than the Skip-BART pass and therefore shown separately on a logarithmic axis. The worker-thread queue handoffs (skip enqueue/dequeue) are negligible at approximately 0.01\,ms on both machines, confirming that the asynchronous design adds no meaningful overhead and that Skip-BART's cost is genuinely in computation, not in the surrounding plumbing.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.96\textwidth]{figures/chapters/6/server_compute_breakdown.pdf}
+    \caption{Mean server-side per-stage processing time (log scale), excluding the network path. Queue handoffs are negligible on both machines; BeatNet drain is the only stage with a clear device difference, favouring the M1 Pro.}
+    \label{fig:eval-server}
+\end{figure}
+
+The one stage with a clear difference is BeatNet's inference drain: a mean of 8.7\,ms (95th percentile 59\,ms) on the M1 Pro against 26.0\,ms (95th percentile 181\,ms) on the i7-8086K workstation. BeatNet's real-time path is sensitive to single-thread CPU performance and scheduling jitter, and the newer M1 Pro both runs it faster and with markedly less tail variance than the 2018-era desktop CPU. This propagates into the server dwell time, whose mean rises from 13.0\,ms on the Mac to 46.7\,ms on the workstation while the medians remain close (1.5\,ms versus 2.8\,ms)---a tail-driven difference, not a shift in typical-case cost.
+
+\subsection{End-to-end latency is dominated by the network path}
+
+Figure~\ref{fig:eval-cdf} shows the cumulative distributions of beat and lighting delivery latency. For beat updates the separation is large: the median beat latency is 8\,ms on the loopback Mac configuration but 102\,ms over the LAN, and the tails diverge further still. This is a transport effect, not a compute effect---it tracks the round-trip time, which rises from a median of 3\,ms (loopback) to 42\,ms (LAN), with a 95th percentile of 715\,ms caused by jitter introduced by the TCP/SSH tunnel rather than by the inference device.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.96\textwidth]{figures/chapters/6/end_to_end_latency_cdf.pdf}
+    \caption{Cumulative distribution of beat (left) and lighting (right) end-to-end delivery latency, pooled across runs. The loopback Mac curves rise steeply; the LAN Windows curves are shifted right with long tails, reflecting transport cost rather than the compute device.}
+    \label{fig:eval-cdf}
+\end{figure}
+
+Lighting delivery latency is less separated than beat latency---medians of 18\,ms and 21\,ms respectively---because lighting frames arrive in bursts produced by a completed inference pass, so their delivery timing is shaped more by the burst structure than by per-message transport. The aggregate figures for all metrics are collected in Table~\ref{tab:eval-metrics}, kept in the two groups motivated above.
+
+\begin{table}[htbp]
+\centering
+\caption{Aggregated metrics, pooled across three runs per configuration. Server-side metrics isolate the compute device; end-to-end and network metrics additionally reflect the transport path (loopback for Mac, LAN for Windows). Lower is better throughout except for the lighting update rate.}
+\label{tab:eval-metrics}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Mac-local-MPS}} & \multicolumn{2}{c}{\textbf{Windows-CUDA-LAN}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Metric} & mean & p95 & mean & p95 \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{Server-side compute (device)}} \\
+Skip-BART inference (s)        & 8.10  & 13.04 & 7.43  & 11.64 \\
+BeatNet drain (ms)             & 8.67  & 58.74 & 25.99 & 180.84 \\
+BeatNet ingest (ms)            & 1.54  & 3.63  & 2.64  & 6.06 \\
+Skip enqueue/dequeue (ms)      & 0.01  & 0.01  & 0.01  & 0.02 \\
+Server dwell (ms)              & 12.98 & 74.54 & 46.67 & 247.60 \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{End-to-end / network (device + transport)}} \\
+WebSocket RTT (ms)             & 14.08 & 83.00 & 125.67 & 715.00 \\
+Beat delivery (ms)             & 23.81 & 100.00 & 165.82 & 625.00 \\
+Lighting delivery (ms)         & 26.46 & 120.00 & 88.02  & 271.00 \\
+Lighting update rate (Hz)      & \multicolumn{2}{c}{$\approx$2.50} & \multicolumn{2}{c}{$\approx$2.69} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion}
+\label{sec:eval-discussion}
+
+Three conclusions follow from these measurements. First, the \textbf{beat-tracking path meets real-time expectations} when the network is local: a median beat-to-light latency of 8\,ms on the Mac configuration is well within the sub-100\,ms window in which audio and visuals are perceived as synchronous (\hyperref[chap:methodology-requirements-system-design]{Chapter~\ref*{chap:methodology-requirements-system-design}}). The beat path is the part of the system that most needs to be tight, and it is.
+
+Second, the \textbf{lighting path is inference-bound, and that bound is largely device-independent}. Because a window pass costs several seconds and is dominated by feature extraction rather than by the GPU decode, switching from MPS to a CUDA GPU does not materially improve the lighting update rate. This reframes the system's principal performance limitation: it is not the WebSocket transport, the serialization overhead, or the worker-thread architecture---all of which are negligible---but the cost of repeatedly extracting embeddings over a rolling window for a model that was never designed to stream. Meaningful improvement would come from optimising or replacing the embedding stage, caching overlapping window computation, or adopting a streaming-native lighting model, rather than from faster decode hardware alone.
+
+Third, the \textbf{end-to-end comparison is confounded by the transport path} and must be read accordingly. The Mac configuration is loopback and the Windows configuration is a real LAN reached through an SSH tunnel, so the larger Windows latencies---and especially the heavy RTT tail---reflect transport, not the RTX 2070 Super. The fair device comparison is the server-side group of Table~\ref{tab:eval-metrics}, where the two machines are close and the M1 Pro's only clear advantage is in BeatNet drain consistency.
+
+These results should be read with their limitations in mind. They cover a single audio track on two machines with three runs each; the SSH tunnel adds latency and jitter that a production deployment on the same subnet could reduce; and the headline cost---the Skip-BART window pass---was measured as a single combined stage, so the precise split between embedding and decode is inferred rather than directly instrumented. The reserved third configuration (Table~\ref{tab:eval-machines}) and a finer-grained breakdown of the inference stage are natural next steps, and the measurement tooling has been structured to accommodate both without changes to the analysis.

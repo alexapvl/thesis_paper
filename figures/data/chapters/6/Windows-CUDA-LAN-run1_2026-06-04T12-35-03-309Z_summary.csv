@@ -1,0 +1,33 @@
+# run_id=ec1c665e-b586-4c4a-9a2a-57022eafd668
+# config_label=Mac-local-MPS
+# started_at=2026-06-04T12:35:03.309Z
+# duration_ms=65020
+# warmup_ms=5000
+# protocol_version=1.0.0
+# file_name=D# Fat (Original Mix).wav
+# file_duration_ms=328593.7708333333
+# chunk_size=2048
+# sample_rate=48000
+# chunks_sent=1524
+# chunks_received=1524
+# beats_real=25
+# beats_synthetic=108
+# lighting_frames=147
+# device=cuda:NVIDIA GeForce RTX 2070 SUPER
+# beat_tracker=beatnet
+# skip_bart=skipbart
+# note_server_skip_ingest_queue_ms=time to enqueue chunk (not inference)
+# note_server_skip_drain_queue_ms=time to dequeue predictions (not inference)
+# note_server_skip_inference_ms=OpenL3 embed + Skip-BART decode on worker thread
+# note_server_stage_raw_t_ms=blank for backend samples (no client clock)
+metric,mean,p50,p95,p99,min,max,stddev,n
+beat.e2e_ms,163.450,113.000,625.000,860.000,5.000,1103.000,195.597,129
+lighting.e2e_ms,113.915,187.000,239.000,244.000,11.000,244.000,98.198,129
+lighting.fps,2.615,2.615,2.615,2.615,2.615,2.615,0.000,1
+network.rtt_ms,101.833,15.000,796.000,796.000,2.000,796.000,214.763,12
+server.beat.drain_ms,26.344,0.002,177.608,281.202,0.001,423.610,63.847,1524
+server.beat.ingest_ms,2.653,2.267,6.147,8.203,0.773,10.690,1.513,1524
+server.dwell_ms,59.240,2.984,247.921,315.187,1.001,327.854,91.510,133
+server.skip.drain_queue_ms,0.007,0.006,0.012,0.020,0.003,0.363,0.010,1524
+server.skip.inference_ms,7299.731,9715.296,11673.164,11673.164,2430.319,11673.164,3431.009,8
+server.skip.ingest_queue_ms,0.008,0.007,0.015,0.028,0.003,0.088,0.005,1524
