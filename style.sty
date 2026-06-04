@@ -5,7 +5,34 @@
 \usepackage[utf8]{inputenc}                     % encoding
 \usepackage{graphicx}                           % images
 \usepackage{booktabs}                           % professional tables
+\usepackage{listings}                           % source-code snippets
+\usepackage{xcolor}                             % snippet colours
 \usepackage{url}                                % links
+
+% lightweight code-listing style for short, illustrative snippets
+\definecolor{lstbg}{HTML}{F8FAFC}
+\definecolor{lstframe}{HTML}{CBD5E1}
+\definecolor{lstkw}{HTML}{2563EB}
+\definecolor{lstcomment}{HTML}{64748B}
+\definecolor{lststring}{HTML}{16A34A}
+\lstdefinestyle{thesis}{
+  backgroundcolor=\color{lstbg},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{lstkw}\bfseries,
+  commentstyle=\color{lstcomment}\itshape,
+  stringstyle=\color{lststring},
+  frame=single,
+  rulecolor=\color{lstframe},
+  framesep=5pt,
+  showstringspaces=false,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  numbers=none,
+  aboveskip=1em,
+  belowskip=1em,
+}
+\lstset{style=thesis}
 \usepackage[nottoc, notlof, notlot]{tocbibind}  % table of contents style
 \usepackage[hidelinks]{hyperref}
 \usepackage{etoolbox,ifthen} 	                % ifthen type of commands
