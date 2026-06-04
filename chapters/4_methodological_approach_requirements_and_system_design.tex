@@ -1,9 +1,9 @@
 \chapter{Methodological Approach, Requirements, and System Design}
 \label{chap:methodology-requirements-system-design}
 
-This chapter translates the technology and platform constraints from Chapter 3 into a concrete system design by defining the methodological framing, deriving the requirements the prototype must satisfy, and specifying the resulting architecture and runtime structure.
+This chapter translates the technology and platform constraints from \fullref{chap:technologies-and-platform-constraints}{Chapter} into a concrete system design by defining the methodological framing, deriving the requirements the prototype must satisfy, and specifying the resulting architecture and runtime structure.
 
-Positioned between technology selection (Chapter 3) and implementation (Chapter 5), this chapter serves as the design bridge between technical rationale and concrete execution.
+Positioned between technology selection (\fullref{chap:technologies-and-platform-constraints}{Chapter}) and implementation (\fullref{chap:implementation}{Chapter}), this chapter serves as the design bridge between technical rationale and concrete execution.
 
 \section{Methodological Framing}
 
@@ -13,15 +13,15 @@ This methodology is constraint-driven rather than purely abstract. Architectural
 
 This methodology follows from the problem itself: the system must analyse audio and generate lighting responses while music is playing. Because latency accumulates across audio capture, feature extraction, inference, message transport, and rendering, the design cannot optimize any single stage in isolation.
 
-A further methodological consequence is that design quality must be judged not only by algorithmic correctness, but also by whether the integrated prototype remains perceptually responsive during use. Chapter 2 established that sound-to-light systems tolerate more delay than instrumental interaction, but still require synchronization tight enough to appear aligned with musical events. For this reason, the present chapter treats system design as the disciplined management of latency, modularity, and usability under the constraints imposed by the chosen platform.
+A further methodological consequence is that design quality must be judged not only by algorithmic correctness, but also by whether the integrated prototype remains perceptually responsive during use. \fullref{chap:theoretical-background}{Chapter} established that sound-to-light systems tolerate more delay than instrumental interaction, but still require synchronization tight enough to appear aligned with musical events. For this reason, the present chapter treats system design as the disciplined management of latency, modularity, and usability under the constraints imposed by the chosen platform.
 
 \section{System Requirements}
 
-Based on the thesis objectives, the Chapter 3 platform constraints, and the earlier application requirements, the system design is guided by a compact set of functional and non-functional requirements.
+Based on the thesis objectives, the \fullref{chap:technologies-and-platform-constraints}{Chapter} platform constraints, and the earlier application requirements, the system design is guided by a compact set of functional and non-functional requirements.
 
 \subsection{R1. Real-time responsiveness}
 
-End-to-end audio-to-light updates must remain within a perceptually synchronous latency budget during interactive playback. This target is justified both by the Chapter 2 discussion of sound-to-light latency and by the practical requirement specification that set a sub-100 ms end-to-end target for the application.
+End-to-end audio-to-light updates must remain within a perceptually synchronous latency budget during interactive playback. This target is justified both by the \fullref{chap:theoretical-background}{Chapter} discussion of sound-to-light latency and by the practical requirement specification that set a sub-100 ms end-to-end target for the application.
 
 \subsection{R2. Stable browser interaction}
 
@@ -58,7 +58,7 @@ Taken together, these requirements avoid overcommitting the design to outdated a
 \subsection{Hybrid deployment as the governing decision}
 \label{sec:ch4-hybrid-governing-decision}
 
-The central architectural decision is a browser--server partition. The justification for this partition is established in Section~\ref{sec:ch3-machine-learning-deployment}; here, the focus is on the design consequences of that partition. The remaining decisions in this section --- module ownership, state management, and communication protocol --- derive from this split rather than re-justify it.
+The central architectural decision is a browser--server partition. The justification for this partition is established in \fullref{sec:ch3-machine-learning-deployment}{Section}; here, the focus is on the design consequences of that partition. The remaining decisions in this section --- module ownership, state management, and communication protocol --- derive from this split rather than re-justify it.
 
 \begin{figure}[htbp]
     \centering
@@ -69,26 +69,26 @@ The central architectural decision is a browser--server partition. The justifica
 \subsection{Browser-side audio handling and rendering}
 \label{sec:ch4-browser-audio-rendering}
 
-The browser owns user-proximal tasks: audio input, the Web Audio graph, local analysis, 3D rendering, and the user interface. This allocation preserves the accessibility advantages of the web platform while ensuring that interaction and visualization remain tightly coupled to the presentation layer. The detailed treatment of how the two audio sources are unified into a single processing path is presented in Section~\ref{sec:ch4-frontend-runtime-data-flow} as part of the resulting frontend data flow.
+The browser owns user-proximal tasks: audio input, the Web Audio graph, local analysis, 3D rendering, and the user interface. This allocation preserves the accessibility advantages of the web platform while ensuring that interaction and visualization remain tightly coupled to the presentation layer. The detailed treatment of how the two audio sources are unified into a single processing path is presented in \fullref{sec:ch4-frontend-runtime-data-flow}{Section} as part of the resulting frontend data flow.
 
 \subsection{Native inference on the Python server}
 \label{sec:ch4-native-inference}
 
 The Python server module owns two responsibilities: real-time beat tracking and Skip-BART inference. Both run in their original Python and PyTorch form so that published model weights and post-processing logic remain authoritative, in line with Requirement R3.
 
-The design implication is that the server is treated as the canonical environment for model execution. Any other module that needs inference outputs must obtain them through the streaming interface defined in Section~\ref{sec:ch4-communication-protocol}, rather than maintaining a parallel inference path.
+The design implication is that the server is treated as the canonical environment for model execution. Any other module that needs inference outputs must obtain them through the streaming interface defined in \fullref{sec:ch4-communication-protocol}{Section}, rather than maintaining a parallel inference path.
 
 \subsection{Shared state and selective rendering updates}
 \label{sec:ch4-shared-state}
 
-To satisfy Requirement R2 under the browser execution model identified in Chapter 3, the architecture must avoid pushing high-frequency lighting updates through unnecessarily expensive UI reconciliation paths. The selected React + R3F + Zustand stack supports this by pairing a declarative UI layer with a 3D rendering layer and a lightweight shared store suited to rapidly changing visual parameters.
+To satisfy Requirement R2 under the browser execution model identified in \fullref{chap:technologies-and-platform-constraints}{Chapter}, the architecture must avoid pushing high-frequency lighting updates through unnecessarily expensive UI reconciliation paths. The selected React + R3F + Zustand stack supports this by pairing a declarative UI layer with a 3D rendering layer and a lightweight shared store suited to rapidly changing visual parameters.
 
 The resulting design rule is that the UI and the rendering loop consume shared state differently but coherently: UI components subscribe to the control and status slices they need, while the rendering path applies lighting updates at frame rate. The same store is the single source of truth for both interaction and rendering.
 
 \subsection{Communication protocol and runtime assumptions}
 \label{sec:ch4-communication-protocol}
 
-The browser--server boundary uses the WebSocket transport selected in Section~\ref{sec:ch3-realtime-communication}. At the design level, what matters is the message contract on that channel: raw PCM chunks travel upstream from the browser to the server, while beat positions, tempo values, and lighting parameters travel downstream. This direction of flow is what the rest of the system design relies on, and it is the integration point referenced by both Sections~\ref{sec:ch4-native-inference} and~\ref{sec:ch4-shared-state}.
+The browser--server boundary uses the WebSocket transport selected in \fullref{sec:ch3-realtime-communication}{Section}. At the design level, what matters is the message contract on that channel: raw PCM chunks travel upstream from the browser to the server, while beat positions, tempo values, and lighting parameters travel downstream. This direction of flow is what the rest of the system design relies on, and it is the integration point referenced by both \fullref{sec:ch4-native-inference}{Section} and~\fullref{sec:ch4-shared-state}{Section}.
 
 The intended runtime is a developer workstation running a Chromium-based browser and a local Python server, in line with Requirement R8.
 
@@ -122,7 +122,7 @@ At runtime, the pipeline proceeds in five stages:
     \item the browser ingests these outputs into shared state and applies them to interface updates and scene rendering in real time.
 \end{enumerate}
 
-This pipeline satisfies the architectural intent established earlier in the chapter. Rendering and interaction stay close to the user-facing runtime, whereas model execution remains in the environment best suited to native PyTorch workloads. The overall design therefore operationalizes the Chapter 3 technology selections while satisfying the methodological and requirement-level criteria defined above.
+This pipeline satisfies the architectural intent established earlier in the chapter. Rendering and interaction stay close to the user-facing runtime, whereas model execution remains in the environment best suited to native PyTorch workloads. The overall design therefore operationalizes the \fullref{chap:technologies-and-platform-constraints}{Chapter} technology selections while satisfying the methodological and requirement-level criteria defined above.
 
 \begin{figure}[htbp]
     \centering
@@ -132,9 +132,9 @@ This pipeline satisfies the architectural intent established earlier in the chap
 
 \subsection{Latency-budget perspective and bridge to implementation}
 
-The architecture can also be read as an explicit allocation of the latency budget identified in Chapter 3. Each design decision earlier in this chapter has a budget consequence: native inference removes model-conversion overhead, the WebSocket channel removes per-message protocol cost, the shared-store rendering rule removes UI reconciliation cost on the hot path, and the unified Web Audio graph removes input-mode-specific divergence. Together, these decisions are what make the sub-100 ms end-to-end target structurally feasible rather than incidentally achieved.
+The architecture can also be read as an explicit allocation of the latency budget identified in \fullref{chap:technologies-and-platform-constraints}{Chapter}. Each design decision earlier in this chapter has a budget consequence: native inference removes model-conversion overhead, the WebSocket channel removes per-message protocol cost, the shared-store rendering rule removes UI reconciliation cost on the hot path, and the unified Web Audio graph removes input-mode-specific divergence. Together, these decisions are what make the sub-100 ms end-to-end target structurally feasible rather than incidentally achieved.
 
-The design therefore commits to a latency-aware partition of responsibilities. Chapter 5 examines how that partition is realized in code, what engineering trade-offs arose during implementation, and what evidence demonstrates a working real-time prototype.
+The design therefore commits to a latency-aware partition of responsibilities. \fullref{chap:implementation}{Chapter} examines how that partition is realized in code, what engineering trade-offs arose during implementation, and what evidence demonstrates a working real-time prototype.
 
 \begin{figure}[htbp]
     \centering

@@ -35,6 +35,8 @@
 \lstset{style=thesis}
 \usepackage[nottoc, notlof, notlot]{tocbibind}  % table of contents style
 \usepackage[hidelinks]{hyperref}
+% cross-reference helper: whole "Word N" is a single clickable link
+\newcommand{\fullref}[2]{\hyperref[#1]{#2~\ref*{#1}}}
 \usepackage{etoolbox,ifthen} 	                % ifthen type of commands
 \usepackage{kvoptions}	                        % define key/value pairs as options for packages and classes
 \usepackage{caption}

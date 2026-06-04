@@ -1,7 +1,7 @@
 \chapter{Implementation}
 \label{chap:implementation}
 
-Chapter~\ref{chap:methodology-requirements-system-design} committed the system to a latency-aware browser--server partition and closed by promising to show how that partition is realised in code, what engineering trade-offs arose, and what evidence demonstrates a working prototype. This chapter delivers the first two; the evidence is the subject of Chapter~\ref{chap:evaluation}. Rather than narrating every module, it is organised around the engineering problems that most shaped the prototype, each illustrated with a short extract from the codebase. The implementation was developed incrementally over roughly fifty commits, and several of the decisions below are best understood as responses to concrete failures encountered along the way.
+\fullref{chap:methodology-requirements-system-design}{Chapter} committed the system to a latency-aware browser--server partition and closed by promising to show how that partition is realised in code, what engineering trade-offs arose, and what evidence demonstrates a working prototype. This chapter delivers the first two; the evidence is the subject of \fullref{chap:evaluation}{Chapter}. Rather than narrating every module, it is organised around the engineering problems that most shaped the prototype, each illustrated with a short extract from the codebase. The implementation was developed incrementally over roughly fifty commits, and several of the decisions below are best understood as responses to concrete failures encountered along the way.
 
 \section{Repository and Toolchain}
 
@@ -25,7 +25,7 @@ export const lightingUpdateSchema = envelopeSchema.extend({
 export type LightingUpdate = z.infer<typeof lightingUpdateSchema>;
 \end{lstlisting}
 
-The two diagnostic fields in Listing~\ref{lst:lighting-schema} are optional, which is what allowed the benchmark instrumentation of Chapter~\ref{chap:evaluation} to be added later without breaking compatibility with messages that predate it. The same envelope carries a protocol version, so a frontend and backend that disagree fail loudly at session initialisation instead of silently misinterpreting fields.
+The two diagnostic fields in \fullref{lst:lighting-schema}{Listing} are optional, which is what allowed the benchmark instrumentation of \fullref{chap:evaluation}{Chapter} to be added later without breaking compatibility with messages that predate it. The same envelope carries a protocol version, so a frontend and backend that disagree fail loudly at session initialisation instead of silently misinterpreting fields.
 
 \section{One Audio Path for File and Microphone}
 \label{sec:impl-audio}
@@ -43,7 +43,7 @@ graph.setMonitor(true);
 \section{Streaming a Model That Was Not Built to Stream}
 \label{sec:impl-skipbart}
 
-The most significant implementation challenge is that Skip-BART is not a streaming model. As discussed in Chapter~\ref{chap:theoretical-background}, it is autoregressive over a fixed-length input sequence and was designed to generate a lighting track for a whole piece of music in a single offline pass. The prototype, by contrast, receives audio in small chunks while the music plays. Bridging this gap is the core of the integration work, and it is done with three mechanisms.
+The most significant implementation challenge is that Skip-BART is not a streaming model. As discussed in \fullref{chap:theoretical-background}{Chapter}, it is autoregressive over a fixed-length input sequence and was designed to generate a lighting track for a whole piece of music in a single offline pass. The prototype, by contrast, receives audio in small chunks while the music plays. Bridging this gap is the core of the integration work, and it is done with three mechanisms.
 
 First, the backend maintains a rolling raw-audio buffer of roughly the last ten seconds and re-runs inference over that window periodically rather than continuously. The window is bounded to keep each pass tractable, and a frame cursor ensures that only lighting frames newer than the last emitted one are published---without it, the restricted stochastic sampling would re-emit overlapping frames with different sampled colours on every pass, producing visible flicker.
 
@@ -62,7 +62,7 @@ if self._chunks_since_run < MIN_CHUNKS_BETWEEN_RUNS:
 self._chunks_since_run = 0
 \end{lstlisting}
 
-Second, because a single window pass can take several seconds (Chapter~\ref{chap:evaluation} measures it at roughly eight on both test machines), running it inline would stall the chunk pipeline and freeze beat tracking. Inference therefore runs on a dedicated background worker thread: \texttt{ingest()} pushes a chunk onto a queue and returns immediately, the worker drains the queue and runs inference when the window is ready, and \texttt{get\_predictions()} non-blockingly collects whatever the worker has produced. A monotonically increasing \emph{generation} counter, checked both before processing a chunk and before publishing each predicted frame, lets a mid-stream session reset discard in-flight work without interrupting an inference already under way.
+Second, because a single window pass can take several seconds (\fullref{chap:evaluation}{Chapter} measures it at roughly eight on both test machines), running it inline would stall the chunk pipeline and freeze beat tracking. Inference therefore runs on a dedicated background worker thread: \texttt{ingest()} pushes a chunk onto a queue and returns immediately, the worker drains the queue and runs inference when the window is ready, and \texttt{get\_predictions()} non-blockingly collects whatever the worker has produced. A monotonically increasing \emph{generation} counter, checked both before processing a chunk and before publishing each predicted frame, lets a mid-stream session reset discard in-flight work without interrupting an inference already under way.
 
 \begin{lstlisting}[language=Python,caption={Worker-thread ingest. The generation guard discards chunks enqueued before a session reset.},label={lst:skip-worker}]
 def _worker_loop(self) -> None:
@@ -78,7 +78,7 @@ def _worker_loop(self) -> None:
             self._out_queue.put(pred)
 \end{lstlisting}
 
-Third, an early version loaded the models lazily on the first audio chunk, which produced a multi-second stall the first time playback started. Eager-loading the adapters at server startup moved that cost to launch time, where it does not affect interaction. The practical outcome of all three mechanisms is that lighting updates arrive in bursts---one burst per completed window pass---while the rest of the pipeline stays responsive. This burst behaviour is exactly what the lighting-rate measurements in Chapter~\ref{chap:evaluation} reflect, and it is a property of the integration strategy rather than of the transport or the worker design.
+Third, an early version loaded the models lazily on the first audio chunk, which produced a multi-second stall the first time playback started. Eager-loading the adapters at server startup moved that cost to launch time, where it does not affect interaction. The practical outcome of all three mechanisms is that lighting updates arrive in bursts---one burst per completed window pass---while the rest of the pipeline stays responsive. This burst behaviour is exactly what the lighting-rate measurements in \fullref{chap:evaluation}{Chapter} reflect, and it is a property of the integration strategy rather than of the transport or the worker design.
 
 \section{Keeping the Beat Path Real-Time}
 \label{sec:impl-beat}
@@ -98,7 +98,7 @@ while (
     self._next_predicted_beat_ms += self._beat_interval_ms
 \end{lstlisting}
 
-The \texttt{synthetic} flag travels in the beat message (Listing~\ref{lst:lighting-schema} shows the analogous field on lighting), so the frontend and the benchmark can distinguish real from synthesised beats; the latter counted 110--120 of roughly 130 beats per run in Chapter~\ref{chap:evaluation}, a direct measure of how often synthesis was doing the work.
+The \texttt{synthetic} flag travels in the beat message (\fullref{lst:lighting-schema}{Listing} shows the analogous field on lighting), so the frontend and the benchmark can distinguish real from synthesised beats; the latter counted 110--120 of roughly 130 beats per run in \fullref{chap:evaluation}{Chapter}, a direct measure of how often synthesis was doing the work.
 
 \section{Supporting Concerns}
 \label{sec:impl-supporting}
@@ -114,16 +114,16 @@ const hue = (((lighting.hue % 360) + 360) % 360) / 360;
 out.setHSL(hue, SATURATION, LIGHTNESS);
 \end{lstlisting}
 
-Keeping this mapping pure and isolated means the rendering loop can apply high-frequency lighting updates without routing them through React's reconciliation, satisfying the responsiveness rule from Section~\ref{sec:ch4-shared-state}.
+Keeping this mapping pure and isolated means the rendering loop can apply high-frequency lighting updates without routing them through React's reconciliation, satisfying the responsiveness rule from \fullref{sec:ch4-shared-state}{Section}.
 
 \subsection{Robustness and observability}
 
-Operating the prototype during development surfaced a class of failures that are invisible in offline code but routine in a live socket. Client disconnects mid-message were initially treated as errors and triggered an attempt to write to an already-closed socket; they are now treated as a clean exit. Backend stages are wrapped in lightweight timers feeding a rolling-window metrics registry---the same instrumentation later reused for the benchmark in Chapter~\ref{chap:evaluation}---and a structured debug log surfaces WebSocket close codes in the interface. One non-obvious transport issue is worth recording: the protocol-level WebSocket keepalive had to be disabled in development because the Vite dev proxy drops control frames, which otherwise closed the connection spuriously.
+Operating the prototype during development surfaced a class of failures that are invisible in offline code but routine in a live socket. Client disconnects mid-message were initially treated as errors and triggered an attempt to write to an already-closed socket; they are now treated as a clean exit. Backend stages are wrapped in lightweight timers feeding a rolling-window metrics registry---the same instrumentation later reused for the benchmark in \fullref{chap:evaluation}{Chapter}---and a structured debug log surfaces WebSocket close codes in the interface. One non-obvious transport issue is worth recording: the protocol-level WebSocket keepalive had to be disabled in development because the Vite dev proxy drops control frames, which otherwise closed the connection spuriously.
 
 \section{The Application in Use}
 \label{sec:impl-app}
 
-Figure~\ref{fig:impl-screenshot} shows the running prototype. The central viewport renders the 3D stage---a truss structure carrying lighting fixtures over a reflective floor---driven live by the model output. The left panel is the fixture and structure catalogue used to compose the stage; the top bar holds audio-source selection, transport controls, and the stage import/export actions; and the right panel exposes the scene editor together with live model output and a debug log. The arrangement maps directly onto the module decomposition of Chapter~\ref{chap:methodology-requirements-system-design}: input and transport along the top, scene composition on the left, rendering in the centre, and shared state and diagnostics on the right.
+\fullref{fig:impl-screenshot}{Figure} shows the running prototype. The central viewport renders the 3D stage---a truss structure carrying lighting fixtures over a reflective floor---driven live by the model output. The left panel is the fixture and structure catalogue used to compose the stage; the top bar holds audio-source selection, transport controls, and the stage import/export actions; and the right panel exposes the scene editor together with live model output and a debug log. The arrangement maps directly onto the module decomposition of \fullref{chap:methodology-requirements-system-design}{Chapter}: input and transport along the top, scene composition on the left, rendering in the centre, and shared state and diagnostics on the right.
 
 \begin{figure}[htbp]
     \centering
@@ -132,4 +132,4 @@ Figure~\ref{fig:impl-screenshot} shows the running prototype. The central viewpo
     \label{fig:impl-screenshot}
 \end{figure}
 
-Taken together, the implementation realises the Chapter~\ref{chap:methodology-requirements-system-design} partition while absorbing the practical cost of running research models in a live setting: a typed protocol at the boundary, a unified audio path, an offline lighting model adapted to stream through windowing and a worker thread, a real-time beat path with synthesis, and a clean separation between scene state and runtime rendering. How well the resulting system performs, and where its limits lie, is quantified in Chapter~\ref{chap:evaluation}.
+Taken together, the implementation realises the \fullref{chap:methodology-requirements-system-design}{Chapter} partition while absorbing the practical cost of running research models in a live setting: a typed protocol at the boundary, a unified audio path, an offline lighting model adapted to stream through windowing and a worker thread, a real-time beat path with synthesis, and a clean separation between scene state and runtime rendering. How well the resulting system performs, and where its limits lie, is quantified in \fullref{chap:evaluation}{Chapter}.
