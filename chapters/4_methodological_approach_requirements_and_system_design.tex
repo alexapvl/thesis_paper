@@ -21,7 +21,7 @@ Based on the thesis objectives, the \fullref{chap:technologies-and-platform-cons
 
 \subsection{R1. Real-time responsiveness}
 
-End-to-end audio-to-light updates must remain within a perceptually synchronous latency budget during interactive playback. This target is justified both by the \fullref{chap:theoretical-background}{Chapter} discussion of sound-to-light latency and by the practical requirement specification that set a sub-100 ms end-to-end target for the application.
+The system produces two kinds of visual output with different responsiveness needs, and R1 applies to each differently. On the beat-synchronization path, where detected beats drive immediate visual reactions, end-to-end audio-to-reaction latency must remain within a perceptually synchronous budget---a sub-100 ms target justified by the \fullref{chap:theoretical-background}{Chapter} discussion of sound-to-light latency and by the practical requirement specification. On the generative lighting path, where Skip-BART produces the colour palette, the requirement is instead one of cadence: the lighting must refresh often enough to track the music's evolution. Because Skip-BART generates lighting for a whole window at once rather than streaming, this path is not held to the sub-100 ms threshold, and its responsiveness is measured by update rate rather than per-frame latency.
 
 \subsection{R2. Stable browser interaction}
 
@@ -132,12 +132,12 @@ This pipeline satisfies the architectural intent established earlier in the chap
 
 \subsection{Latency-budget perspective and bridge to implementation}
 
-The architecture can also be read as an explicit allocation of the latency budget identified in \fullref{chap:technologies-and-platform-constraints}{Chapter}. Each design decision earlier in this chapter has a budget consequence: native inference removes model-conversion overhead, the WebSocket channel removes per-message protocol cost, the shared-store rendering rule removes UI reconciliation cost on the hot path, and the unified Web Audio graph removes input-mode-specific divergence. Together, these decisions are what make the sub-100 ms end-to-end target structurally feasible rather than incidentally achieved.
+The architecture can also be read as an explicit allocation of the latency budget identified in \fullref{chap:technologies-and-platform-constraints}{Chapter}. Each design decision earlier in this chapter has a budget consequence: native inference removes model-conversion overhead, the WebSocket channel removes per-message protocol cost, the shared-store rendering rule removes UI reconciliation cost on the hot path, and the unified Web Audio graph removes input-mode-specific divergence. Together, these decisions are what make the sub-100 ms end-to-end target for the beat-synchronization path structurally feasible rather than incidentally achieved. The generative lighting path falls outside this budget; its responsiveness is bounded by the periodic Skip-BART window pass rather than by the transport and rendering costs decomposed here (\fullref{chap:evaluation}{Chapter}).
 
 The design therefore commits to a latency-aware partition of responsibilities. \fullref{chap:implementation}{Chapter} examines how that partition is realized in code, what engineering trade-offs arose during implementation, and what evidence demonstrates a working real-time prototype.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{figures/chapters/4/latency_budget_breakdown.pdf}
-    \caption{Latency-budget breakdown across the runtime pipeline. The chart decomposes estimated latency contributions from browser audio output, WebSocket transport, backend inference, and rendering/state update, and relates their aggregate to the target synchronization threshold.}
+    \caption{Latency-budget breakdown across the runtime pipeline. The chart decomposes estimated latency contributions from browser audio output, WebSocket transport, backend inference, and rendering/state update, and relates their aggregate to the sub-100 ms synchronization threshold for the beat-synchronization path.}
 \end{figure}
