@@ -10,7 +10,7 @@ The system under test is identical across configurations---same frontend, protoc
 
 \subsection{Test configurations}
 
-Measurements were collected on the two machines summarised in \fullref{tab:eval-machines}{Table}. A third configuration, a university GPU server, is reserved for future inclusion; the measurement tooling and figures are structured so that adding it requires only dropping its exported files alongside the existing ones.
+Measurements were collected on the two machines summarised in \fullref{tab:eval-machines}{Table}.
 
 \begin{table}[htbp]
 \centering
@@ -125,4 +125,4 @@ Second, the \textbf{lighting path is inference-bound, and that bound is largely 
 
 Third, the \textbf{end-to-end comparison is confounded by the transport path} and must be read accordingly. The Mac configuration is loopback and the Windows configuration is a real LAN reached through an SSH tunnel, so the larger Windows latencies---and especially the heavy RTT tail---reflect transport, not the RTX 2070 Super. The fair device comparison is the server-side group of \fullref{tab:eval-metrics}{Table}, where the two machines are close and the M1 Pro's only clear advantage is in BeatNet drain consistency.
 
-These results should be read with their limitations in mind. They cover a single audio track on two machines with three runs each; the SSH tunnel adds latency and jitter that a production deployment on the same subnet could reduce; and the headline cost---the Skip-BART window pass---was measured as a single combined stage, so the precise split between embedding and decode is inferred rather than directly instrumented. The reserved third configuration (\fullref{tab:eval-machines}{Table}) and a finer-grained breakdown of the inference stage are natural next steps, and the measurement tooling has been structured to accommodate both without changes to the analysis.
+These results should be read with their limitations in mind. They cover a single audio track on two machines with three runs each; the SSH tunnel adds latency and jitter that a production deployment on the same subnet could reduce; and the headline cost---the Skip-BART window pass---was measured as a single combined stage, so the precise split between embedding and decode is inferred rather than directly instrumented. A finer-grained breakdown of the inference stage would be a natural next step.
